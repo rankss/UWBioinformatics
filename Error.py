@@ -1,3 +1,5 @@
+from Logger import Logger
+
 class Error(Exception):
     """
     Base class for user-defined exceptions
@@ -19,12 +21,12 @@ class SequenceInvalidError(Error):
         msg -- Explanation of the error
     """
 
-    def __init__(self, seq, msg="Invalid Sequence"):
-        self.seq = seq
+    def __init__(self, sequence, message="Invalid Sequence"):
+        self.sequence = sequence
         if len(self.seq) > 10:
-            self.seq = self.seq[:11] + "..."
-        self.msg = msg
+            self.sequence = self.sequence[:11] + "..."
+        self.message = sequence
     
     def __str__(self):
-        return f"{self.msg}: {self.seq}"
+        return f"{self.message}: {self.sequence}"
     

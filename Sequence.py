@@ -1,3 +1,5 @@
+import Constants
+from Logger import Logger
 from Error import *
 
 class Sequence:
@@ -11,11 +13,13 @@ class Sequence:
         Validate    -- Implemented by subclasses
         Clean       -- Basic cleaning of sequence
     """
-
     def __init__(self, sequence: str):
         self.sequence = sequence
         self.Clean()
         return
+
+    def __str__(self):
+        return self.sequence
 
     def Clean(self):
         self.sequence = self.sequence.strip().upper()
@@ -29,15 +33,13 @@ class DNASequence(Sequence):
     Methods:
         Validate -- Checks if nucleotide sequence string is valid
     """
-
     def __init__(self, sequence: str):
         super().__init__(sequence)
         self.Validate()
 
     def Validate(self):
-        nucleotides = ["A", "G", "C", "T"]
         for nt in self.sequence:
-            if nt not in nucleotides:
+            if nt not in Constants.NUCLEOTIDES:
                 raise SequenceInvalidError(self.sequence)
         return
 
@@ -46,15 +48,12 @@ class AASequence(Sequence):
     Methods:
         Validate -- Checks if amino acid sequence string is valid
     """
-
     def __init__(self, sequence: str):
         super().__init__(sequence)
         self.Validate()
     
     def Validate(self):
-        aminoacids = ["A", "R", "N", "D", "C", "E", "Q", "G", "H", 
-                        "I", "L", "K", "M", "F", "P", "S", "T", "W", "Y", "T"]
         for aa in self.sequence:
-            if aa not in aminoacids:
+            if aa not in Constants.AMINO_ACIDS:
                 raise SequenceInvalidError(self.sequence)
         return
