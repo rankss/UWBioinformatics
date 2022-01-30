@@ -5,7 +5,6 @@ class Error(Exception):
     Base class for user-defined exceptions
 
     """
-
     def __init__(self):
         raise NotImplementedError("Implemented by subclasses")
 
@@ -20,7 +19,6 @@ class SequenceInvalidError(Error):
         seq -- Sequence which caused the exception
         msg -- Explanation of the error
     """
-
     def __init__(self, sequence, message="Invalid Sequence"):
         self.sequence = sequence
         if len(self.seq) > 10:
