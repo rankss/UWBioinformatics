@@ -1,5 +1,6 @@
-import Constants
+from Constants import BlockConstants
 from Logger import Logger
+from Error import *
 
 class Score:
     """
@@ -15,18 +16,19 @@ class Score:
         Matrix          -- Prints scoring matrix according to format indicated
         ValidateInput   -- Validates all input and automatically sets block type
     """
-    def __init__(self, matrix: dict, existence: int, extension: int):
+    def __init__(self, matrix: dict, block: BlockConstants, existence: int, extension: int):
+        self.logger = Logger()
         self.matrix = matrix
         self.existence = existence
         self.extension = extension
-        self.block = None
+        self.block = block
 
-        self.ValidateInput()
+        self.Validate()
 
         return
 
     def __str__(self):
-        """ 
+        """
         Output Format
         =====================
         | GapExistence: -11 |
@@ -43,19 +45,37 @@ class Score:
         | T |-1 |-1 |-1 | 1 |
         =====================
         """
-        timesAcross = len(sequence) + 1
-        output = f"="*(4*timesAcross+1) + f"\n| GapExistence: {str(self.existence).rjust(3).ljust(4)}|\n| GapExtension: {str(self.extension).rjust(3).ljust(4)}|\n"
-        output += f"="*(4*timesAcross+1) + f"\n|   |"
-        for hnt in self.sequence:
-            output += f"{hnt.rjust(2).ljust(3)}|"
-        for vnt in self.sequence:
-            output += f"\n" + f"|---"*timesAcross + f"|\n" + f"|{vnt.rjust(2).ljust(3)}|"
-            for hnt in sequence:
-                output += f"{str(self.matrix[vnt][hnt]).rjust(2).ljust(3)}|"
-        output += f"\n" + f"="*((4*timesAcross+1)+1) + f"\n"
+        times_across = len(self.block) + 1
+        output = r"="*(4*times_across+1) + f"\n| GapExistence: {str(self.existence).rjust(3).ljust(4)}|\n| GapExtension: {str(self.extension).rjust(3).ljust(4)}|\n"
+        output += r"="*(4*times_across+1) + r"\n|   |"
+        for hblock in self.block:
+            output += f"{hblock.rjust(2).ljust(3)}|"
+        for vblock in self.block:
+            output += r"\n" + r"|---"*times_across + r"|\n" + f"|{vblock.rjust(2).ljust(3)}|"
+            for hblock in self.block:
+                output += f"{str(self.matrix[vblock][hblock]).rjust(2).ljust(3)}|"
+        output += r"\n" + r"="*((4*times_across+1)+1) + r"\n"
         return output
 
-    def ValidateInput(self):
-        # TODO
+    def Validate(self):
+        size = len(self.matrix.keys())
+        if size != len(self.block):
+            raise InvalidMatrixError(f"InvalidMatrixError: Size Given = {size} | Expected = {len(self.block)}")
+
+        for key in self.matrix.keys():
+            if key not in self.block:
+                raise InvalidMatrixError(f"InvalidMatrixError: {key} is not a valid amino acid")
+
+        for block in self.block:
+            if block not in self.matrix.keys():
+                raise InvalidMatrixError(f"InvalidMatrixError: {block} is not found in matrix")
+
+        if self.existence > 99:
+            self.existence = 99
+        if self.extension > 99:
+            self.extension = 99
+
+        self.existence = -self.existence
+        self.extension = -self.extension
         return
         

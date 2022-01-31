@@ -1,30 +1,40 @@
 from Logger import Logger
 
 class Error(Exception):
-    """
-    Base class for user-defined exceptions
+    """[summary]
 
+    Args:
+        Exception ([type]): [description]
     """
-    def __init__(self):
-        raise NotImplementedError("Implemented by subclasses")
+    def __init__(self, message: str):
+        super().__init__()
+        self.logger = Logger()
+        self.message = message
 
     def __str__(self):
         raise NotImplementedError("Implemented by subclasses")
 
-class SequenceInvalidError(Error):
-    """
-    Exception raised for invalid sequence
+class InvalidSequenceError(Error):
+    """[summary]
 
-    Attributes:
-        seq -- Sequence which caused the exception
-        msg -- Explanation of the error
+    Args:
+        Error ([type]): [description]
     """
-    def __init__(self, sequence, message="Invalid Sequence"):
-        self.sequence = sequence
-        if len(self.seq) > 10:
-            self.sequence = self.sequence[:11] + "..."
-        self.message = sequence
+    def __init__(self, message="Invalid Sequence"):
+        super().__init__(message)
+
+    def __str__(self):
+        return f"{self.message}"
     
+class InvalidMatrixError(Error):
+    """[summary]
+
+    Args:
+        Error ([type]): [description]
+    """
+    def __init__(self, message="Invalid Matrix"):
+        super().__init__(message)
+
     def __str__(self):
-        return f"{self.message}: {self.sequence}"
+        return f"{self.message}"
     

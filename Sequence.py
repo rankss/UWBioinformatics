@@ -1,4 +1,4 @@
-import Constants
+from Constants import *
 from Logger import Logger
 from Error import *
 
@@ -14,6 +14,7 @@ class Sequence:
         Clean       -- Basic cleaning of sequence
     """
     def __init__(self, sequence: str):
+        self.logger = Logger()
         self.sequence = sequence
         self.Clean()
         return
@@ -38,9 +39,9 @@ class DNASequence(Sequence):
         self.Validate()
 
     def Validate(self):
-        for nt in self.sequence:
-            if nt not in Constants.NUCLEOTIDES:
-                raise SequenceInvalidError(self.sequence)
+        for nucleotide in self.sequence:
+            if nucleotide not in BlockConstants.NUCLEOTIDES:
+                raise InvalidSequenceError(f"InvalidSequenceError: {nucleotide} is not a nucleotide")
         return
 
 class AASequence(Sequence):
@@ -51,9 +52,9 @@ class AASequence(Sequence):
     def __init__(self, sequence: str):
         super().__init__(sequence)
         self.Validate()
-    
+
     def Validate(self):
-        for aa in self.sequence:
-            if aa not in Constants.AMINO_ACIDS:
-                raise SequenceInvalidError(self.sequence)
+        for amino_acid in self.sequence:
+            if amino_acid not in BlockConstants.AMINO_ACIDS:
+                raise InvalidSequenceError(f"InvalidSequenceError: {amino_acid} is not an amino acid")
         return

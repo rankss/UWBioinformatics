@@ -1,4 +1,4 @@
-import threading
+from threading import Lock
 import datetime
 
 class Logger:
@@ -18,20 +18,20 @@ class Logger:
     """
     __instance = None
     __initialized = False
-    __lock = threading.Lock()
+    __lock = Lock()
 
-    def __new__(self):
-        if not self.__instance:
-            with self.__lock:
-                if not self.__instance:
-                    self.__instance = super(Logger, self).__new__(self)
-        return self.__instance
+    def __new__(cls):
+        if not cls.__instance:
+            with cls.__lock:
+                if not cls.__instance:
+                    cls.__instance = super(Logger, cls).__new__(cls)
+        return cls.__instance
 
     def __init__(self):
         if not self.__initialized:
             with self.__lock:
                 if not self.__initialized:
-                    self.file = open(f"Log_{datetime.datetime.now().strftime(f'%Y-%m-%d')}.txt", 'w+')
+                    self.file = open(f"Log_{datetime.datetime.now().strftime(r'%Y-%m-%d')}.log", 'w+')
                     self.file.write(f"--- Logged by thread safe singleton logger on {datetime.datetime.now().strftime(f'%Y-%m-%d')} ---\n")
                     self.__initialized = True
         return
@@ -43,6 +43,6 @@ class Logger:
 
     def Log(self, msg: str):
         with self.__lock:
-            self.file.write(f"{datetime.datetime.now().strftime(f'%Y-%m-%d %H:%M:%S')}: {str(msg)}\n")
+            self.file.write(f"{datetime.datetime.now().strftime(r'%Y-%m-%d %H:%M:%S')}: {str(msg)}\n")
             self.file.flush()
         return

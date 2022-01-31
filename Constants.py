@@ -1,35 +1,40 @@
 # Constants/Defaults
 
-NUCLEOTIDES = "ACGT"
-AMINO_ACIDS = "CSTPAGNDEQHRKMILVFYW"
+class BlockConstants:
 
-EXAMPLE_MATRIX = {
-    'A': {
-        'A': -10,
-        'G': -10,
-        'C': -10,
-        'T': -10
-    },
-    'G': {
-        'A': 10,
-        'G': 10,
-        'C': 10,
-        'T': 10
-    },
-    'C': {
-        'A': 10,
-        'G': 10,
-        'C': 10,
-        'T': 10
-    },
-    'T': {
-        'A': 10,
-        'G': 10,
-        'C': 10,
-        'T': 10
-    },
-}
+    NUCLEOTIDES = "ACGT"
+    AMINO_ACIDS = "CSTPAGNDEQHRKMILVFYW"
 
-BLOSUM62 = {
-    # TODO
-}
+class MatrixConstants:
+
+    EXAMPLE_MATRIX = {
+        'A': {
+            'A': 1,
+            'G': -1,
+            'C': -1,
+            'T': -1
+        },
+        'G': {
+            'A': -1,
+            'G': 1,
+            'C': -1,
+            'T': -1
+        },
+        'C': {
+            'A': -1,
+            'G': -1,
+            'C': 1,
+            'T': -1
+        },
+        'T': {
+            'A': -1,
+            'G': -1,
+            'C': -1,
+            'T': 1
+        },
+    }
+
+    BLOSUM62 = {
+        # TODO
+    }
+    
