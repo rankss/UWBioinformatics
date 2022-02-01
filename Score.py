@@ -8,8 +8,8 @@ class Score:
 
     Attributes:
         matrix          -- Scoring matrix
-        existence       -- Value for gap existence (maximum = 99)
-        extension       -- Value for gap extension (maximum = 99)
+        existence       -- Value for gap existence
+        extension       -- Value for gap extension
         block           -- Building block of sequence
 
     Methods:
@@ -70,12 +70,7 @@ class Score:
             if block not in self.matrix.keys():
                 raise InvalidMatrixError(f"InvalidMatrixError: {block} is not found in matrix")
 
-        if self.existence > 99:
-            self.existence = 99
-        if self.extension > 99:
-            self.extension = 99
-
-        self.existence = -self.existence
-        self.extension = -self.extension
+        self.existence = -abs(self.existence)
+        self.extension = -abs(self.extension)
         return
         
