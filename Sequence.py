@@ -14,7 +14,7 @@ class Sequence:
         Clean       -- Basic cleaning of sequence
     """
     def __init__(self, sequence: str):
-        self.logger = Logger()
+        # self.logger = Logger()
         self.sequence = sequence
         self.Clean()
         return

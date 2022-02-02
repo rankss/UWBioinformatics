@@ -17,7 +17,7 @@ class Score:
         ValidateInput   -- Validates all input and automatically sets block type
     """
     def __init__(self, matrix: dict, block: BlockConstants, existence: int, extension: int):
-        self.logger = Logger()
+        # self.logger = Logger()
         self.matrix = matrix
         self.existence = existence
         self.extension = extension
@@ -46,15 +46,15 @@ class Score:
         =====================
         """
         times_across = len(self.block) + 1
-        output = r"="*(4*times_across+1) + f"\n| GapExistence: {str(self.existence).rjust(3).ljust(4)}|\n| GapExtension: {str(self.extension).rjust(3).ljust(4)}|\n"
-        output += r"="*(4*times_across+1) + r"\n|   |"
+        output = "="*(4*times_across+1) + f"\n| GapExistence: {str(self.existence).rjust(3).ljust(4)}|\n| GapExtension: {str(self.extension).rjust(3).ljust(4)}|\n"
+        output += "="*(4*times_across+1) + "\n|   |"
         for hblock in self.block:
             output += f"{hblock.rjust(2).ljust(3)}|"
         for vblock in self.block:
-            output += r"\n" + r"|---"*times_across + r"|\n" + f"|{vblock.rjust(2).ljust(3)}|"
+            output += "\n" + "|---"*times_across + "|\n" + f"|{vblock.rjust(2).ljust(3)}|"
             for hblock in self.block:
                 output += f"{str(self.matrix[vblock][hblock]).rjust(2).ljust(3)}|"
-        output += r"\n" + r"="*((4*times_across+1)+1) + r"\n"
+        output += "\n" + "="*(4*times_across+1)
         return output
 
     def Validate(self):
