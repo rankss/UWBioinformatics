@@ -72,7 +72,8 @@ class PairwiseAlignment:
                                          self.dp_array[j][i-1] + exist + extend)
                 matrices["v_gap"][j][i] = max(matrices["v_gap"][j-1][i] + extend,
                                          self.dp_array[j-1][i] + exist + extend)
-                matrices["match"][j][i] = self.dp_array[j-1][i-1] + matrix[self.vseq[j-1]][self.hseq[i-1]]
+                matrices["match"][j][i] = (self.dp_array[j-1][i-1]
+                                           + matrix[self.vseq[j-1]][self.hseq[i-1]])
                 self.dp_array[j][i] = max(matrices["h_gap"][j][i],
                                           matrices["v_gap"][j][i],
                                           matrices["match"][j][i])
@@ -86,12 +87,12 @@ class PairwiseAlignment:
 
         # Find alignment(s)
         self.paths = []
-        self.__Paths("", 0, hlen-1, vlen-1)
+        self.__Paths("", hlen-1, vlen-1)
         self.__Alignments()
         print(f"Score: {self.dp_array[vlen-1][hlen-1]}")
         return
 
-    def __Paths(self, temp_path: list, iteration: int, i: int, j: int, i_min=0, j_min=0):
+    def __Paths(self, temp_path: list, i: int, j: int, i_min=0, j_min=0):
         """This function was rough to code...
 
         Args:
@@ -102,16 +103,16 @@ class PairwiseAlignment:
             j_min (int, optional): Vertical index of where path end. Defaults to 0.
         """
         dir_dict = {
-            "L": [-1, 0],
-            "U": [0, -1],
-            "D": [-1, -1]
+            "L": [-1, 0], # Left
+            "U": [0, -1], # Up
+            "D": [-1, -1] # Diagonal
         }
 
         # Perform depth first walk while obtaining each path
         if i > i_min or j > j_min:
             curr = self.direction[j][i]
             for direction in curr:
-                self.__Paths(temp_path + direction, iteration + 1,
+                self.__Paths(temp_path + direction,
                             i + dir_dict[direction][0],
                             j + dir_dict[direction][1])
         else:
@@ -145,9 +146,9 @@ class PairwiseAlignment:
             print(f"Alignment {i+1}:")
             print(hmatch)
             print(vmatch)
-            
+
         return
-    
+
     def Local(self):
         """Performs Smith-Waterman for sequence pair with affine gap penalty
         """
