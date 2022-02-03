@@ -6,5 +6,5 @@ def test_pairwiseAlignmentGeneral():
     alignment = PairwiseAlignment("GTCGACGCA", "GATTACA", matrix)
     alignment.Local()
     alignment.Summary()
-    
+
 test_pairwiseAlignmentGeneral()

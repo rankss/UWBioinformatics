@@ -20,6 +20,7 @@ class Sequence:
         self.sequence = sequence
         self.block = block
         self.__Clean()
+        self.__Validate()
         return
 
     def __str__(self):
