@@ -1,12 +1,10 @@
 # Constants/Defaults
 
-class BlockConstants:
-
+class Block:
     NUCLEOTIDES = "ACGT"
     AMINO_ACIDS = "CSTPAGNDEQHRKMILVFYW"
 
-class MatrixConstants:
-
+class Matrix:
     EXAMPLE_MATRIX = {
         'A': {
             'A': 1,

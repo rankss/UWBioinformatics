@@ -25,7 +25,7 @@ class InvalidSequenceError(Error):
 
     def __str__(self):
         return f"{self.message}"
-    
+
 class InvalidMatrixError(Error):
     """[summary]
 
@@ -33,6 +33,18 @@ class InvalidMatrixError(Error):
         Error ([type]): [description]
     """
     def __init__(self, message="Invalid Matrix"):
+        super().__init__(message)
+
+    def __str__(self):
+        return f"{self.message}"
+
+class InvalidModelError(Error):
+    """[summary]
+
+    Args:
+        Error ([type]): [description]
+    """
+    def __init__(self, message="Invalid Model"):
         super().__init__(message)
 
     def __str__(self):
