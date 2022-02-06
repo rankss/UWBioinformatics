@@ -1,40 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from Constants import Block
-from Error import InvalidSequenceError, InvalidMatrixError
-
-__all__ = ["Score", "PairwiseAlignment"]
-
-class Sequence:
-    """Base class for sequence strings
-
-    Attributes:
-        sequence    -- Stores sequence information after stripping and converting to upper case
-
-    Methods:
-        Validate    -- Implemented by subclasses
-        Clean       -- Basic cleaning of sequence
-    """
-    def __init__(self, sequence: str, block: Block):
-        # self.logger = Logger()
-        self.sequence = sequence
-        self.block = block
-        self.__Clean()
-        self.__Validate()
-        return
-
-    def __str__(self):
-        return self.sequence
-
-    def __Clean(self):
-        self.sequence = self.sequence.strip().upper()
-        return
-
-    def __Validate(self):
-        for block in self.sequence:
-            if block not in self.block:
-                raise InvalidSequenceError(f"InvalidSequenceError: {block} is not valid")
-        return
+from Error import InvalidMatrixError
+from Sequence import Sequence
 
 class Score:
     """Scoring scheme for pairwise alignment
@@ -61,8 +29,7 @@ class Score:
         return
 
     def __str__(self):
-        """
-        Output Format
+        """Output Format
         =====================
         | GapExistence: -11 |
         | GapExtension: -1  |
@@ -214,11 +181,10 @@ class PairwiseAlignment:
         for j in range(1, vlen):
             for i in range(1, hlen):
                 self.__matrices["h_gap"][j][i] = max(self.__matrices["h_gap"][j][i-1] + extend,
-                                         self.dp_array[j][i-1] + exist + extend)
+                                                     self.dp_array[j][i-1] + exist + extend)
                 self.__matrices["v_gap"][j][i] = max(self.__matrices["v_gap"][j-1][i] + extend,
-                                         self.dp_array[j-1][i] + exist + extend)
-                self.__matrices["match"][j][i] = (self.dp_array[j-1][i-1]
-                                           + matrix[vseq[j-1]][hseq[i-1]])
+                                                     self.dp_array[j-1][i] + exist + extend)
+                self.__matrices["match"][j][i] = self.dp_array[j-1][i-1] + matrix[vseq[j-1]][hseq[i-1]]
                 self.dp_array[j][i] = max(self.__matrices["h_gap"][j][i],
                                           self.__matrices["v_gap"][j][i],
                                           self.__matrices["match"][j][i])
@@ -254,8 +220,8 @@ class PairwiseAlignment:
             curr = self.direction[j][i]
             for direction in curr:
                 self.__GlobalPaths(temp_path + direction, nodes + [[i, j]],
-                            i + self.__dir_dict[direction][0],
-                            j + self.__dir_dict[direction][1])
+                                   i + self.__dir_dict[direction][0],
+                                   j + self.__dir_dict[direction][1])
         else:
             self.__Match(temp_path[::-1])
             self.paths.append(nodes)
@@ -280,11 +246,10 @@ class PairwiseAlignment:
         for j in range(1, vlen):
             for i in range(1, hlen):
                 self.__matrices["h_gap"][j][i] = max(self.__matrices["h_gap"][j][i-1] + extend,
-                                         self.dp_array[j][i-1] + exist + extend, 0)
+                                                     self.dp_array[j][i-1] + exist + extend, 0)
                 self.__matrices["v_gap"][j][i] = max(self.__matrices["v_gap"][j-1][i] + extend,
-                                         self.dp_array[j-1][i] + exist + extend, 0)
-                self.__matrices["match"][j][i] = (self.dp_array[j-1][i-1]
-                                           + matrix[vseq[j-1]][hseq[i-1]])
+                                                     self.dp_array[j-1][i] + exist + extend, 0)
+                self.__matrices["match"][j][i] = self.dp_array[j-1][i-1] + matrix[vseq[j-1]][hseq[i-1]]
                 self.dp_array[j][i] = max(self.__matrices["v_gap"][j][i],
                                           self.__matrices["h_gap"][j][i],
                                           self.__matrices["match"][j][i], 0)

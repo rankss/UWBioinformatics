@@ -35,4 +35,16 @@ class Matrix:
     BLOSUM62 = {
         # TODO
     }
+
+class Translation:
     
+    COMPLEMENT = {
+        'A': 'T',
+        'T': 'A',
+        'C': 'G',
+        'G': 'C'
+    }
+    
+    TRANSLATION = {
+        # TODO
+    }
