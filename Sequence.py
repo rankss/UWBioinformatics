@@ -1,4 +1,3 @@
-from audioop import reverse
 from Error import InvalidSequenceError, InvalidSequenceTypeError
 
 class Sequence:
