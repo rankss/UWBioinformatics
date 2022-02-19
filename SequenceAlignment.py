@@ -1,78 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from Constants import Block
-from Error import InvalidMatrixError
 from Sequence import Sequence
-
-class Score:
-    """Scoring scheme for pairwise alignment
-
-    Attributes:
-        matrix          -- Scoring matrix
-        existence       -- Value for gap existence
-        extension       -- Value for gap extension
-        block           -- Building block of sequence
-
-    Methods:
-        Matrix          -- Prints scoring matrix according to format indicated
-        ValidateInput   -- Validates all input and automatically sets block type
-    """
-    def __init__(self, matrix: dict, block: Block, existence: int, extension: int):
-        # self.logger = Logger()
-        self.matrix = matrix
-        self.existence = existence
-        self.extension = extension
-        self.block = block
-
-        self.__Validate()
-
-        return
-
-    def __str__(self):
-        """Output Format
-        =====================
-        | GapExistence: -11 |
-        | GapExtension: -1  |
-        =====================
-        |   | A | G | C | T |
-        |---|---|---|---|---|
-        | A | 1 |-1 |-1 |-1 |
-        |---|---|---|---|---|
-        | G |-1 | 1 |-1 |-1 |
-        |---|---|---|---|---|
-        | C |-1 |-1 | 1 |-1 |
-        |---|---|---|---|---|
-        | T |-1 |-1 |-1 | 1 |
-        =====================
-        """
-        times_across = len(self.block) + 1
-        output = "="*(4*times_across+1) + f"\n| GapExistence: {str(self.existence).rjust(3).ljust(4)}|\n| GapExtension: {str(self.extension).rjust(3).ljust(4)}|\n"
-        output += "="*(4*times_across+1) + "\n|   |"
-        for hblock in self.block:
-            output += f"{hblock.rjust(2).ljust(3)}|"
-        for vblock in self.block:
-            output += "\n" + "|---"*times_across + "|\n" + f"|{vblock.rjust(2).ljust(3)}|"
-            for hblock in self.block:
-                output += f"{str(self.matrix[vblock][hblock]).rjust(2).ljust(3)}|"
-        output += "\n" + "="*(4*times_across+1)
-        return output
-
-    def __Validate(self):
-        size = len(self.matrix.keys())
-        if size != len(self.block):
-            raise InvalidMatrixError(f"InvalidMatrixError: Size Given = {size} | Expected = {len(self.block)}")
-
-        for key in self.matrix.keys():
-            if key not in self.block:
-                raise InvalidMatrixError(f"InvalidMatrixError: {key} is not a valid amino acid")
-
-        for block in self.block:
-            if block not in self.matrix.keys():
-                raise InvalidMatrixError(f"InvalidMatrixError: {block} is not found in matrix")
-
-        self.existence = -abs(self.existence)
-        self.extension = -abs(self.extension)
-        return
+from Matrix import Score
 
 class PairwiseAlignment:
     """Global/Local Pairwise Alignment
@@ -81,7 +10,7 @@ class PairwiseAlignment:
         hseq (Sequence): Horizontal sequence
         vseq (Sequence): Vertical sequence
         score (Score): Scoring matrix with gap penalties
-        dp_array (List): Contains final scoring of alignment
+        dpArray (List): Contains final scoring of alignment
         direction (List): Contains direction per cell
         alignment (List): Contains all optimal alignments
 
@@ -93,16 +22,16 @@ class PairwiseAlignment:
     def __init__(self, sequence1: str, sequence2: str, score: Score):
         # self.logger = Logger()
         self.score = score
-        self.hseq = Sequence(sequence1, self.score.block)
-        self.vseq = Sequence(sequence2, self.score.block)
-        self.dp_array = None
+        self.hseq = Sequence(sequence1, self.score.sequenceType)
+        self.vseq = Sequence(sequence2, self.score.sequenceType)
+        self.dpArray = None
         self.direction = None
         self.paths = None
         self.alignments = None
 
         self.__matrices = {
-            "h_gap": np.zeros((len(self.vseq.sequence)+1, len(self.hseq.sequence)+1)),
-            "v_gap": np.zeros((len(self.vseq.sequence)+1, len(self.hseq.sequence)+1)),
+            "hgap": np.zeros((len(self.vseq.sequence)+1, len(self.hseq.sequence)+1)),
+            "vgap": np.zeros((len(self.vseq.sequence)+1, len(self.hseq.sequence)+1)),
             "match": np.zeros((len(self.vseq.sequence)+1, len(self.hseq.sequence)+1))
         }
         self.__dir_dict = {
@@ -159,20 +88,20 @@ class PairwiseAlignment:
         matrix = self.score.matrix
 
         # Define recurrence matrices
-        self.dp_array = np.zeros((vlen, hlen))
+        self.dpArray = np.zeros((vlen, hlen))
         self.direction = [["" for i in range(hlen)] for j in range(vlen)]
 
         # Initialize recurrence matrices
-        self.__matrices["v_gap"][0][0] = -np.Inf
+        self.__matrices["vgap"][0][0] = -np.Inf
         for i in range(1, hlen):
-            self.__matrices["v_gap"][0][i] = exist + i*extend
-            self.dp_array[0][i] = exist + i*extend
+            self.__matrices["vgap"][0][i] = exist + i*extend
+            self.dpArray[0][i] = exist + i*extend
             self.direction[0][i] += "L"
 
-        self.__matrices["h_gap"][0][0] = -np.Inf
+        self.__matrices["hgap"][0][0] = -np.Inf
         for j in range(1, vlen):
-            self.__matrices["h_gap"][j][0] = exist + j*extend
-            self.dp_array[j][0] = exist + j*extend
+            self.__matrices["hgap"][j][0] = exist + j*extend
+            self.dpArray[j][0] = exist + j*extend
             self.direction[j][0] += "U"
 
         self.__matrices["match"][0][0] = -np.Inf
@@ -180,20 +109,20 @@ class PairwiseAlignment:
         # Affine gap penalty recurrence relation
         for j in range(1, vlen):
             for i in range(1, hlen):
-                self.__matrices["h_gap"][j][i] = max(self.__matrices["h_gap"][j][i-1] + extend,
-                                                     self.dp_array[j][i-1] + exist + extend)
-                self.__matrices["v_gap"][j][i] = max(self.__matrices["v_gap"][j-1][i] + extend,
-                                                     self.dp_array[j-1][i] + exist + extend)
-                self.__matrices["match"][j][i] = self.dp_array[j-1][i-1] + matrix[vseq[j-1]][hseq[i-1]]
-                self.dp_array[j][i] = max(self.__matrices["h_gap"][j][i],
-                                          self.__matrices["v_gap"][j][i],
+                self.__matrices["hgap"][j][i] = max(self.__matrices["hgap"][j][i-1] + extend,
+                                                     self.dpArray[j][i-1] + exist + extend)
+                self.__matrices["vgap"][j][i] = max(self.__matrices["vgap"][j-1][i] + extend,
+                                                     self.dpArray[j-1][i] + exist + extend)
+                self.__matrices["match"][j][i] = self.dpArray[j-1][i-1] + matrix[vseq[j-1]][hseq[i-1]]
+                self.dpArray[j][i] = max(self.__matrices["hgap"][j][i],
+                                          self.__matrices["vgap"][j][i],
                                           self.__matrices["match"][j][i])
                 # Direction
-                if self.dp_array[j][i] == self.__matrices["h_gap"][j][i]:
+                if self.dpArray[j][i] == self.__matrices["hgap"][j][i]:
                     self.direction[j][i] += "L"
-                if self.dp_array[j][i] == self.__matrices["v_gap"][j][i]:
+                if self.dpArray[j][i] == self.__matrices["vgap"][j][i]:
                     self.direction[j][i] += "U"
-                if self.dp_array[j][i] == self.__matrices["match"][j][i]:
+                if self.dpArray[j][i] == self.__matrices["match"][j][i]:
                     self.direction[j][i] += "D"
 
         # Find alignment(s)
@@ -203,7 +132,7 @@ class PairwiseAlignment:
         self.__GlobalPaths("", [], hlen-1, vlen-1)
         for i in range(len(self.alignments)):
             print(f"Alignment {i+1}\n{self.alignments[i]}")
-        print(f"Score: {self.dp_array[vlen-1][hlen-1]}")
+        print(f"Score: {self.dpArray[vlen-1][hlen-1]}")
         return
 
     def __GlobalPaths(self, temp_path: str, nodes: list, i: int, j: int):
@@ -212,8 +141,8 @@ class PairwiseAlignment:
         Args:
             temp_path (list): Temporary path
             nodes (list): Traversed nodes
-            i (int): Optimal horizontal index in dp_array
-            j (int): Optimal vertical index in dp_array
+            i (int): Optimal horizontal index in dpArray
+            j (int): Optimal vertical index in dpArray
         """
         # Perform depth first walk to origin while obtaining each matching
         if i > 0 or j > 0:
@@ -239,36 +168,36 @@ class PairwiseAlignment:
         matrix = self.score.matrix
 
         # Define recurrence matrices
-        self.dp_array = np.zeros((vlen, hlen))
+        self.dpArray = np.zeros((vlen, hlen))
         self.direction = [["" for i in range(hlen)] for j in range(vlen)]
 
         # Affine gap penalty recurrence relation
         for j in range(1, vlen):
             for i in range(1, hlen):
-                self.__matrices["h_gap"][j][i] = max(self.__matrices["h_gap"][j][i-1] + extend,
-                                                     self.dp_array[j][i-1] + exist + extend, 0)
-                self.__matrices["v_gap"][j][i] = max(self.__matrices["v_gap"][j-1][i] + extend,
-                                                     self.dp_array[j-1][i] + exist + extend, 0)
-                self.__matrices["match"][j][i] = self.dp_array[j-1][i-1] + matrix[vseq[j-1]][hseq[i-1]]
-                self.dp_array[j][i] = max(self.__matrices["v_gap"][j][i],
-                                          self.__matrices["h_gap"][j][i],
+                self.__matrices["hgap"][j][i] = max(self.__matrices["hgap"][j][i-1] + extend,
+                                                     self.dpArray[j][i-1] + exist + extend, 0)
+                self.__matrices["vgap"][j][i] = max(self.__matrices["vgap"][j-1][i] + extend,
+                                                     self.dpArray[j-1][i] + exist + extend, 0)
+                self.__matrices["match"][j][i] = self.dpArray[j-1][i-1] + matrix[vseq[j-1]][hseq[i-1]]
+                self.dpArray[j][i] = max(self.__matrices["vgap"][j][i],
+                                          self.__matrices["hgap"][j][i],
                                           self.__matrices["match"][j][i], 0)
                 # Direction
-                if self.dp_array[j][i] == self.__matrices["h_gap"][j][i]:
+                if self.dpArray[j][i] == self.__matrices["hgap"][j][i]:
                     self.direction[j][i] += "L"
-                if self.dp_array[j][i] == self.__matrices["v_gap"][j][i]:
+                if self.dpArray[j][i] == self.__matrices["vgap"][j][i]:
                     self.direction[j][i] += "U"
-                if self.dp_array[j][i] == self.__matrices["match"][j][i]:
+                if self.dpArray[j][i] == self.__matrices["match"][j][i]:
                     self.direction[j][i] += "D"
 
         # Create alignment(s)
         self.direction = np.array(self.direction)
         self.alignments = []
         self.paths = []
-        optimum = np.max(self.dp_array)
+        optimum = np.max(self.dpArray)
         for j in range(vlen):
             for i in range(hlen):
-                if self.dp_array[j][i] == optimum:
+                if self.dpArray[j][i] == optimum:
                     self.__LocalPaths("", [], i, j)
         for i in range(len(self.alignments)):
             print(f"Alignment {i+1}\n{self.alignments[i]}")
@@ -280,11 +209,11 @@ class PairwiseAlignment:
 
         Args:
             temp_path (list): Temporary path
-            i (int): Optimal horizontal index in dp_array
-            j (int): Optimal vertical index in dp_array
+            i (int): Optimal horizontal index in dpArray
+            j (int): Optimal vertical index in dpArray
         """
         # Perform depth first walk to nearest 0 while obtaining matching
-        if self.dp_array[j][i] != 0:
+        if self.dpArray[j][i] != 0:
             curr = self.direction[j][i]
             for direction in curr:
                 self.__LocalPaths(temp_path + direction, nodes + [[i, j]],
@@ -319,7 +248,7 @@ class PairwiseAlignment:
         fig, axis = plt.subplots(2)
         fig.suptitle("Trace")
         axis[0].set_axis_off()
-        axis[0].table(cellText = self.dp_array,
+        axis[0].table(cellText = self.dpArray,
                       cellColours = cell_colours,
                       rowLabels = row_labels,
                       rowColours = ["#ADD8E6" for row in row_labels],

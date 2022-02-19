@@ -25,6 +25,18 @@ class InvalidSequenceError(Error):
 
     def __str__(self):
         return f"{self.message}"
+    
+class InvalidSequenceTypeError(Error):
+    """[summary]
+
+    Args:
+        Error ([type]): [description]
+    """
+    def __init__(self, message="Invalid Sequence Type"):
+        super().__init__(message)
+
+    def __str__(self):
+        return f"{self.message}"
 
 class InvalidMatrixError(Error):
     """[summary]
