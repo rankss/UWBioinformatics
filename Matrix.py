@@ -78,7 +78,8 @@ class Score:
         self.matrix = matrix
         self.__ValidateMatrix()
         return
-    
+
+# Constants
 EXAMPLE_MATRIX = {
     'A': {'A': 1, 'G': 0, 'C': 0, 'T': 0},
     'G': {'A': 0, 'G': 1, 'C': 0, 'T': 0},

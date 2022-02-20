@@ -56,6 +56,16 @@ class Sequence:
             index = self.sequence.find(subsequence,
                                        index + (1 if overlapping else len(subsequence)))
         return
+    
+    def Frequencies(self):
+        frequency = {}
+        for monomer in self.sequenceType:
+            frequency[monomer] = 0
+        for monomer in self.sequence:
+            frequency[monomer] += 1
+        for key in frequency.keys():
+            frequency[key] = frequency[key]/len(self.sequence)
+        return frequency
         
 class AASequence(Sequence):
     
@@ -112,8 +122,55 @@ class NTSequence(Sequence):
             AASequences["reverse"].append(self.ToAASequence(reverseSequence[i:]))
         return AASequences
     
+    def tRNAScan(self):
+        """Performs tRNA decision tree
+        """
+        windowSize = 76
+        score = 0
+        for i in range(0, len(self.sequence) - windowSize + 1):
+            window = self.sequence[i:i+windowSize]
+            # Count T-phi-C signal invariant bases
+            # count = 0
+            # invariantBases = {52: 'G', 54: 'T', 55: 'C', 60: 'C'}
+            # for key in invariantBases.keys():
+            #     if window[key] == invariantBases[key]:
+            #         count += 1
+            # if count > 2:
+            #     score += 1
+            # else:
+            #     break
+            # # Check T-phi-C arm base pairing
+            # count = 0
+            # basepairing = {52: 60, 51: 61, 50: 62, 49: 63, 48: 64}
+            # for key in basepairing.keys():
+            #     if COMPLEMENT[window[key]] == window[basepairing[key]]:
+            #         count += 1
+            # if count > 4:
+            #     score += 1
+            # else:
+            #     break
+            # # Count D signal invariant bases
+            # count = 0
+            # invariantBases = {7: 'T', 9: 'G', 13: 'A'}
+            # for key in invariantBases.keys():
+            #     if window[key] == invariantBases[key]:
+            #         count += 1
+            # if count > 2:
+            #     score += 1
+            # else:
+            #     break
+            # # Check D arm base pairing
+            # count = 0
+            # basepairing = {9: 24, 10: 23, 11: 22}
+            # for key in basepairing.keys():
+            #     if COMPLEMENT[window[key]] == window[basepairing[key]]:
+            #         count += 1
+            # if count > 2:
+            #     score += 1
+            # else:
+            #     break
+        return
     
-
 # Constants
 NUCLEOTIDES = ['A', 'C', 'G', 'T']
 AMINO_ACIDS = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
