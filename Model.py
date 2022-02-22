@@ -1,31 +1,53 @@
+from ast import Call
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import odeint
-from Error import InvalidModelError
+from typing import Callable
 
 class Model:
     """
     """
-    def __init__(self, model: list, x0: list, start=0, stop=10, step=10000):
-        self.model = model
-        self.x_0 = x0
-        self.time = np.linspace(start, stop, num=step)
-        self.simulation = odeint(self.model, self.x_0, self.time)
-        self.__Validate()
-
-    def __Validate(self):
-        if len(self.model) != len(self.x_0):
-            raise InvalidModelError(f"InvalidModelError: Model length: {len(self.model)} != x0 length: {len(self.x_0)}")
-
-    def PhasePlane(self):
-        # TODO
-        return
-
-    def Nullcline(self):
-        # TODO
-        return
-
-    def Summary(self):
-        # TODO
-        return
+    def Normalize(self, x, y):
+        return x/(np.sqrt(x**2 + y**2)), y/(np.sqrt(x**2 + y**2))
+    
+    def PhasePortrait(self, xFunc: Callable, yFunc: Callable,
+                      xArgs: tuple, yArgs: tuple,
+                      X: list, Y: list,
+                      scale: int=10, nullcline: bool=True):
         
+        DX, DY = self.Normalize(xFunc(*xArgs), yFunc(*yArgs))
+        XScale, YScale = np.array([row[::scale] for row in X[::scale]]), np.array([row[::scale] for row in Y[::scale]])
+        DXScale, DYScale = np.array([row[::scale] for row in DX[::scale]]), np.array([row[::scale] for row in DY[::scale]])
+        
+        plt.figure()
+        plt.xlabel("X Concentration")
+        plt.ylabel("Y Concentration")
+        plt.title("X-Y Phase Plane with Nullcline")
+        plt.quiver(XScale, YScale, DXScale, DYScale, color='grey')
+        if nullcline:
+            plt.contour(X, Y, DX, levels=[0], linewidths=1.5, colors='C0')
+            plt.contour(X, Y, DY, levels=[0], linewidths=1.5, colors='C0')
+            
+        plt.show()
+        return
+    
+    def Behavior(self, model: Callable, x0: list,
+                 start: float, end: float, step: float):
+        
+        time = np.arange(start, end, step)
+        simulation = odeint(model, x0, time)
+        
+        plt.figure()
+        plt.xlabel("Time")
+        plt.ylabel("Concentration")
+        plt.title("System Behavior")
+        for i in range(len(simulation[:,])):
+            plt.plot(time, simulation[:, i], linewidth=1.5, label=f"S{i+1}")
+        return
+    
+    def Nullcline(self):
+        pass
+    
+    def Bifurcation(self):
+        pass
+            

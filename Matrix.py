@@ -4,7 +4,7 @@ from Sequence import NUCLEOTIDES, AMINO_ACIDS
 class Score:
     """_summary_
     """
-    def __init__(self, match: int, mismatch: int, existence: int, extension: int, sequenceType):
+    def __init__(self, match: int, mismatch: int, existence: int, extension: int, sequenceType: list):
         self.matrix = None
         self.match = match
         self.mismatch = mismatch

@@ -3,7 +3,7 @@ from Error import InvalidSequenceError, InvalidSequenceTypeError
 class Sequence:
     """_summary_
     """
-    def __init__(self, sequence: str, sequenceType):
+    def __init__(self, sequence: str, sequenceType: list):
         self.sequence = sequence
         self.sequenceType = sequenceType
         self.__Clean()
