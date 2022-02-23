@@ -26,5 +26,4 @@ def test_phasePortrait():
     model.PhasePortrait(dX, dY, (X, -1), (Y,), X, Y)
     return
         
-    
 test_phasePortrait()

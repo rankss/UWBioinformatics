@@ -175,13 +175,13 @@ class PairwiseAlignment:
         for j in range(1, vlen):
             for i in range(1, hlen):
                 self.__matrices["hgap"][j][i] = max(self.__matrices["hgap"][j][i-1] + extend,
-                                                     self.dpArray[j][i-1] + exist + extend, 0)
+                                                    self.dpArray[j][i-1] + exist + extend, 0)
                 self.__matrices["vgap"][j][i] = max(self.__matrices["vgap"][j-1][i] + extend,
-                                                     self.dpArray[j-1][i] + exist + extend, 0)
+                                                    self.dpArray[j-1][i] + exist + extend, 0)
                 self.__matrices["match"][j][i] = self.dpArray[j-1][i-1] + matrix[vseq[j-1]][hseq[i-1]]
                 self.dpArray[j][i] = max(self.__matrices["vgap"][j][i],
-                                          self.__matrices["hgap"][j][i],
-                                          self.__matrices["match"][j][i], 0)
+                                         self.__matrices["hgap"][j][i],
+                                         self.__matrices["match"][j][i], 0)
                 # Direction
                 if self.dpArray[j][i] == self.__matrices["hgap"][j][i]:
                     self.direction[j][i] += "L"
@@ -217,8 +217,8 @@ class PairwiseAlignment:
             curr = self.direction[j][i]
             for direction in curr:
                 self.__LocalPaths(temp_path + direction, nodes + [[i, j]],
-                            i + self.__dir_dict[direction][0],
-                            j + self.__dir_dict[direction][1])
+                                  i + self.__dir_dict[direction][0],
+                                  j + self.__dir_dict[direction][1])
         else:
             self.__Match(temp_path[::-1])
             self.paths.append(nodes)

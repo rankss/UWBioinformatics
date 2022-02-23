@@ -6,6 +6,7 @@ class Sequence:
     def __init__(self, sequence: str, sequenceType: list):
         self.sequence = sequence
         self.sequenceType = sequenceType
+        self.summary = {}
         self.__Clean()
         self.__Validate()
         if type(self) == Sequence:
@@ -57,15 +58,15 @@ class Sequence:
                                        index + (1 if overlapping else len(subsequence)))
         return
     
-    def Frequencies(self):
-        frequency = {}
-        for monomer in self.sequenceType:
-            frequency[monomer] = 0
+    def Length(self):
+        self.summary["length"] = len(self.sequence)
+        return
+    
+    def Frequency(self):
+        self.summary["frequency"] = {monomer:0 for monomer in self.sequenceType}
         for monomer in self.sequence:
-            frequency[monomer] += 1
-        for key in frequency.keys():
-            frequency[key] = frequency[key]/len(self.sequence)
-        return frequency
+            self.summary["frequency"][monomer] += 1
+        return
         
 class AASequence(Sequence):
     
@@ -100,11 +101,6 @@ class NTSequence(Sequence):
         reverseIndices = self.Complement().FindSubsequence(subsequence, overlapping)
         indices = {"forward": forwardIndices, "reverse": reverseIndices}
         return indices
-    
-    def DNA2RNA(self):
-        sequence = self.sequence
-        sequence.replace('T', 'U')
-        return sequence
     
     def ToAASequence(self, sequence):
         translatedSequence = ""
@@ -171,8 +167,8 @@ class NTSequence(Sequence):
             #     break
         return
     
-        def func():
-            pass
+    def TM(self):
+        pass
     
 # Constants
 NUCLEOTIDES = ['A', 'C', 'G', 'T']
