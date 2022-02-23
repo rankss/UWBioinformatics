@@ -15,6 +15,12 @@ class Sequence:
 
     def __str__(self):
         return self.sequence
+    
+    def __getitem__(self, i):
+        return self.sequence[i]
+    
+    def __len__(self):
+        return len(self.sequence)
 
     def __Clean(self):
         self.sequence = self.sequence.strip().upper()

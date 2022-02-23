@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from Sequence import Sequence
-from Matrix import Score
+from Matrix import EXAMPLE_MATRIX, Score, BLOSUM62, EXAMPLE_MATRIX
 
 class PairwiseAlignment:
     """Global/Local Pairwise Alignment
@@ -19,21 +19,21 @@ class PairwiseAlignment:
         Local (None): Performs Smith-Waterman with affine gap penalty
         Summary (None): Returns summary of previous alignment
     """
-    def __init__(self, sequence1: str, sequence2: str, score: Score):
+    def __init__(self, sequence1: str, sequence2: str, score: Score=EXAMPLE_MATRIX):
         # self.logger = Logger()
         self.score = score
-        self.hseq = Sequence(sequence1, self.score.sequenceType)
-        self.vseq = Sequence(sequence2, self.score.sequenceType)
+        self.hSeq = Sequence(sequence1, self.score.sequenceType)
+        self.vSeq = Sequence(sequence2, self.score.sequenceType)
         self.dpArray = None
         self.direction = None
         self.paths = None
         self.alignments = None
-
-        self.__matrices = {
-            "hgap": np.zeros((len(self.vseq.sequence)+1, len(self.hseq.sequence)+1)),
-            "vgap": np.zeros((len(self.vseq.sequence)+1, len(self.hseq.sequence)+1)),
-            "match": np.zeros((len(self.vseq.sequence)+1, len(self.hseq.sequence)+1))
-        }
+        self.optimal = None
+        
+        self.__hGap = np.zeros((len(self.vSeq) + 1, len(self.hSeq) + 1))
+        self.__vGap = np.zeros((len(self.vSeq) + 1, len(self.hSeq) + 1))
+        self.__match = np.zeros((len(self.vSeq) + 1, len(self.hSeq) + 1))
+        
         self.__dir_dict = {
             "L": [-1, 0], # Left
             "U": [0, -1], # Up
@@ -50,185 +50,161 @@ class PairwiseAlignment:
         }
 
         return
+    
+    def OptimalScore(self):
+        return self.optimal
 
     def __Match(self, temp_path: str):
-        hseq = self.hseq.sequence
-        vseq = self.vseq.sequence
-        hmatch = ""
-        vmatch = ""
-        hcounter = 0
-        vcounter = 0
+        hMatch, vMatch = "", ""
+        hCounter, vCounter = 0, 0
         for direction in temp_path:
             if direction == "D":
-                hmatch += hseq[hcounter]
-                vmatch += vseq[vcounter]
-                hcounter += 1
-                vcounter += 1
+                hMatch += self.hSeq[hCounter]
+                vMatch += self.vSeq[vCounter]
+                hCounter += 1
+                vCounter += 1
             if direction == "L":
-                hmatch += hseq[hcounter]
-                vmatch += "-"
-                hcounter += 1
+                hMatch += self.hSeq[hCounter]
+                vMatch += "-"
+                hCounter += 1
             if direction == "U":
-                hmatch += "-"
-                vmatch += vseq[vcounter]
-                vcounter += 1
-        match = hmatch + "\n" + vmatch
+                hMatch += "-"
+                vMatch += self.vSeq[vCounter]
+                vCounter += 1
+        match = f"{hMatch}\n{vMatch}"
         self.alignments.append(match)
         return
 
     def Global(self):
         """Performs Needleman-Wunsch for sequence pair with affine gap penalty
         """
-        hseq = self.hseq.sequence
-        vseq = self.vseq.sequence
-        hlen = len(hseq) + 1
-        vlen = len(vseq) + 1
-        exist = self.score.existence
-        extend = self.score.extension
+        hLen, vLen = len(self.hSeq) + 1, len(self.vSeq) + 1
+        exist, extend = self.score.existence, self.score.extension
         matrix = self.score.matrix
-
+        
         # Define recurrence matrices
-        self.dpArray = np.zeros((vlen, hlen))
-        self.direction = [["" for i in range(hlen)] for j in range(vlen)]
+        self.dpArray = np.zeros((vLen, hLen))
+        self.direction = [["" for i in range(hLen)] for j in range(vLen)]
 
         # Initialize recurrence matrices
-        self.__matrices["vgap"][0][0] = -np.Inf
-        for i in range(1, hlen):
-            self.__matrices["vgap"][0][i] = exist + i*extend
+        self.__vGap[0][0] = -np.Inf
+        self.__hGap[0][0] = -np.Inf
+        self.__match[0][0] = -np.Inf
+        
+        for i in range(1, hLen):
+            self.__vGap[0][i] = exist + i*extend
             self.dpArray[0][i] = exist + i*extend
             self.direction[0][i] += "L"
 
-        self.__matrices["hgap"][0][0] = -np.Inf
-        for j in range(1, vlen):
-            self.__matrices["hgap"][j][0] = exist + j*extend
+        for j in range(1, vLen):
+            self.__hGap[j][0] = exist + j*extend
             self.dpArray[j][0] = exist + j*extend
             self.direction[j][0] += "U"
 
-        self.__matrices["match"][0][0] = -np.Inf
-
         # Affine gap penalty recurrence relation
-        for j in range(1, vlen):
-            for i in range(1, hlen):
-                self.__matrices["hgap"][j][i] = max(self.__matrices["hgap"][j][i-1] + extend,
-                                                     self.dpArray[j][i-1] + exist + extend)
-                self.__matrices["vgap"][j][i] = max(self.__matrices["vgap"][j-1][i] + extend,
-                                                     self.dpArray[j-1][i] + exist + extend)
-                self.__matrices["match"][j][i] = self.dpArray[j-1][i-1] + matrix[vseq[j-1]][hseq[i-1]]
-                self.dpArray[j][i] = max(self.__matrices["hgap"][j][i],
-                                          self.__matrices["vgap"][j][i],
-                                          self.__matrices["match"][j][i])
+        for j in range(1, vLen):
+            for i in range(1, hLen):
+                self.__hGap[j][i] = max(self.__hGap[j][i-1] + extend,
+                                        self.dpArray[j][i-1] + exist + extend)
+                
+                self.__vGap[j][i] = max(self.__vGap[j-1][i] + extend,
+                                        self.dpArray[j-1][i] + exist + extend)
+                
+                self.__match[j][i] = self.dpArray[j-1][i-1] + matrix[self.vSeq[j-1]][self.hSeq[i-1]]
+                
+                self.dpArray[j][i] = max(self.__hGap[j][i], self.__vGap[j][i], self.__match[j][i])
+                
                 # Direction
-                if self.dpArray[j][i] == self.__matrices["hgap"][j][i]:
+                if self.dpArray[j][i] == self.__hGap[j][i]:
                     self.direction[j][i] += "L"
-                if self.dpArray[j][i] == self.__matrices["vgap"][j][i]:
+                if self.dpArray[j][i] == self.__vGap[j][i]:
                     self.direction[j][i] += "U"
-                if self.dpArray[j][i] == self.__matrices["match"][j][i]:
+                if self.dpArray[j][i] == self.__match[j][i]:
                     self.direction[j][i] += "D"
+                    
+        def GlobalPaths(temp_path: str, nodes: list, i: int, j: int):
+            if i > 0 or j > 0:
+                curr = self.direction[j][i]
+                for direction in curr:
+                    GlobalPaths(temp_path + direction, nodes + [[i, j]],
+                                i + self.__dir_dict[direction][0],
+                                j + self.__dir_dict[direction][1])
+            else:
+                self.__Match(temp_path[::-1])
+                self.paths.append(nodes)
+            return
 
         # Find alignment(s)
-        self.direction = np.array(self.direction)
+        self.optimal = self.dpArray[vLen-1][hLen-1]
         self.alignments = []
         self.paths = []
-        self.__GlobalPaths("", [], hlen-1, vlen-1)
-        for i in range(len(self.alignments)):
-            print(f"Alignment {i+1}\n{self.alignments[i]}")
-        print(f"Score: {self.dpArray[vlen-1][hlen-1]}")
-        return
-
-    def __GlobalPaths(self, temp_path: str, nodes: list, i: int, j: int):
-        """This function was rough to code...
-
-        Args:
-            temp_path (list): Temporary path
-            nodes (list): Traversed nodes
-            i (int): Optimal horizontal index in dpArray
-            j (int): Optimal vertical index in dpArray
-        """
-        # Perform depth first walk to origin while obtaining each matching
-        if i > 0 or j > 0:
-            curr = self.direction[j][i]
-            for direction in curr:
-                self.__GlobalPaths(temp_path + direction, nodes + [[i, j]],
-                                   i + self.__dir_dict[direction][0],
-                                   j + self.__dir_dict[direction][1])
-        else:
-            self.__Match(temp_path[::-1])
-            self.paths.append(nodes)
+        GlobalPaths("", [], hLen-1, vLen-1)
         return
 
     def Local(self):
         """Performs Smith-Waterman for sequence pair with affine gap penalty
         """
-        hseq = self.hseq.sequence
-        vseq = self.vseq.sequence
-        hlen = len(hseq) + 1
-        vlen = len(vseq) + 1
-        exist = self.score.existence
-        extend = self.score.extension
+        hLen, vLen = len(self.hSeq) + 1, len(self.vSeq) + 1
+        exist, extend = self.score.existence, self.score.extension
         matrix = self.score.matrix
 
         # Define recurrence matrices
-        self.dpArray = np.zeros((vlen, hlen))
-        self.direction = [["" for i in range(hlen)] for j in range(vlen)]
+        self.dpArray = np.zeros((vLen, hLen))
+        self.direction = [["" for i in range(hLen)] for j in range(vLen)]
 
         # Affine gap penalty recurrence relation
-        for j in range(1, vlen):
-            for i in range(1, hlen):
-                self.__matrices["hgap"][j][i] = max(self.__matrices["hgap"][j][i-1] + extend,
-                                                    self.dpArray[j][i-1] + exist + extend, 0)
-                self.__matrices["vgap"][j][i] = max(self.__matrices["vgap"][j-1][i] + extend,
-                                                    self.dpArray[j-1][i] + exist + extend, 0)
-                self.__matrices["match"][j][i] = self.dpArray[j-1][i-1] + matrix[vseq[j-1]][hseq[i-1]]
-                self.dpArray[j][i] = max(self.__matrices["vgap"][j][i],
-                                         self.__matrices["hgap"][j][i],
-                                         self.__matrices["match"][j][i], 0)
+        for j in range(1, vLen):
+            for i in range(1, hLen):
+                self.__hGap[j][i] = max(0, self.__hGap[j][i-1] + extend,
+                                        self.dpArray[j][i-1] + exist + extend)
+                
+                self.__vGap[j][i] = max(0, self.__vGap[j-1][i] + extend,
+                                        self.dpArray[j-1][i] + exist + extend)
+                
+                self.__match[j][i] = self.dpArray[j-1][i-1] + matrix[self.vSeq[j-1]][self.hSeq[i-1]]
+                
+                self.dpArray[j][i] = max(0, self.__hGap[j][i], self.__vGap[j][i], self.__match[j][i])
+                
                 # Direction
-                if self.dpArray[j][i] == self.__matrices["hgap"][j][i]:
+                if self.dpArray[j][i] == self.__hGap[j][i]:
                     self.direction[j][i] += "L"
-                if self.dpArray[j][i] == self.__matrices["vgap"][j][i]:
+                if self.dpArray[j][i] == self.__vGap[j][i]:
                     self.direction[j][i] += "U"
-                if self.dpArray[j][i] == self.__matrices["match"][j][i]:
+                if self.dpArray[j][i] == self.__match[j][i]:
                     self.direction[j][i] += "D"
+                    
+        def LocalPaths(temp_path: str, nodes: list, i: int, j: int):
+            # Perform depth first walk to nearest 0 while obtaining matching
+            if self.dpArray[j][i] != 0:
+                curr = self.direction[j][i]
+                for direction in curr:
+                    LocalPaths(temp_path + direction, nodes + [[i, j]],
+                               i + self.__dir_dict[direction][0],
+                               j + self.__dir_dict[direction][1])
+            else:
+                self.__Match(temp_path[::-1])
+                self.paths.append(nodes)
+            return
 
         # Create alignment(s)
-        self.direction = np.array(self.direction)
         self.alignments = []
         self.paths = []
-        optimum = np.max(self.dpArray)
-        for j in range(vlen):
-            for i in range(hlen):
-                if self.dpArray[j][i] == optimum:
-                    self.__LocalPaths("", [], i, j)
+        self.optimal = np.max(self.dpArray)
+        for j in range(vLen):
+            for i in range(hLen):
+                if self.dpArray[j][i] == self.optimal:
+                    LocalPaths("", [], i, j)
+        print(self.paths)
         for i in range(len(self.alignments)):
             print(f"Alignment {i+1}\n{self.alignments[i]}")
-        print(f"Score: {optimum}")
+        print(f"Score: {self.optimal}")
         return
-
-    def __LocalPaths(self, temp_path: str, nodes: list, i: int, j: int):
-        """This one was easier...
-
-        Args:
-            temp_path (list): Temporary path
-            i (int): Optimal horizontal index in dpArray
-            j (int): Optimal vertical index in dpArray
-        """
-        # Perform depth first walk to nearest 0 while obtaining matching
-        if self.dpArray[j][i] != 0:
-            curr = self.direction[j][i]
-            for direction in curr:
-                self.__LocalPaths(temp_path + direction, nodes + [[i, j]],
-                                  i + self.__dir_dict[direction][0],
-                                  j + self.__dir_dict[direction][1])
-        else:
-            self.__Match(temp_path[::-1])
-            self.paths.append(nodes)
-        return
-
+    
     def Summary(self):
         """Prints summary of pairwise alignment
         """
-        row_labels = [" "] + list(self.vseq.sequence)
-        col_labels = [" "] + list(self.hseq.sequence)
+        row_labels = [" "] + list(self.vSeq.sequence)
+        col_labels = [" "] + list(self.hSeq.sequence)
 
         cell_colours = [["w" for i in range(len(col_labels))] for j in range(len(row_labels))]
 
@@ -278,6 +254,15 @@ class PairwiseAlignment:
 class MultipleSequenceAlignment:
     """[summary]
     """
-    def __init__(self, sequences: list):
+    def __init__(self, sequences: list, sequenceType: list, Score: Score=BLOSUM62):
         self.sequences = sequences
+        return
+    
+    def ClustalW(self):
+        # Construct NW for all pairs
+        # Create guide tree based on score
+        for i, sequence1 in enumerate(self.sequences):
+            for sequence2 in self.sequences[i:]:
+                pass
+        
         return
