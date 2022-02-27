@@ -36,10 +36,6 @@ class PairwiseAlignment:
         self.paths = None
         self.alignments = None
         self.optimal = None
-        
-        self.__hGap = np.zeros((len(self.vSeq) + 1, len(self.hSeq) + 1))
-        self.__vGap = np.zeros((len(self.vSeq) + 1, len(self.hSeq) + 1))
-        self.__match = np.zeros((len(self.vSeq) + 1, len(self.hSeq) + 1))
 
         return
 
@@ -92,41 +88,44 @@ class PairwiseAlignment:
         # Define recurrence matrices
         self.dpArray = np.zeros((vLen, hLen))
         self.direction = [["" for i in range(hLen)] for j in range(vLen)]
+        hGap = np.zeros((len(self.vSeq) + 1, len(self.hSeq) + 1))
+        vGap = np.zeros((len(self.vSeq) + 1, len(self.hSeq) + 1))
+        match = np.zeros((len(self.vSeq) + 1, len(self.hSeq) + 1))
 
         # Initialize recurrence matrices
-        self.__vGap[0][0] = -np.Inf
-        self.__hGap[0][0] = -np.Inf
-        self.__match[0][0] = -np.Inf
+        vGap[0][0] = -np.Inf
+        hGap[0][0] = -np.Inf
+        match[0][0] = -np.Inf
         
         for i in range(1, hLen):
-            self.__vGap[0][i] = exist + i*extend
+            vGap[0][i] = exist + i*extend
             self.dpArray[0][i] = exist + i*extend
             self.direction[0][i] += "L"
 
         for j in range(1, vLen):
-            self.__hGap[j][0] = exist + j*extend
+            hGap[j][0] = exist + j*extend
             self.dpArray[j][0] = exist + j*extend
             self.direction[j][0] += "U"
 
         # Affine gap penalty recurrence relation
         for j in range(1, vLen):
             for i in range(1, hLen):
-                self.__hGap[j][i] = max(self.__hGap[j][i-1] + extend,
+                hGap[j][i] = max(hGap[j][i-1] + extend,
                                         self.dpArray[j][i-1] + exist + extend)
                 
-                self.__vGap[j][i] = max(self.__vGap[j-1][i] + extend,
+                vGap[j][i] = max(vGap[j-1][i] + extend,
                                         self.dpArray[j-1][i] + exist + extend)
                 
-                self.__match[j][i] = self.dpArray[j-1][i-1] + matrix[self.vSeq[j-1]][self.hSeq[i-1]]
+                match[j][i] = self.dpArray[j-1][i-1] + matrix[self.vSeq[j-1]][self.hSeq[i-1]]
                 
-                self.dpArray[j][i] = max(self.__hGap[j][i], self.__vGap[j][i], self.__match[j][i])
+                self.dpArray[j][i] = max(hGap[j][i], vGap[j][i], match[j][i])
                 
                 # Direction
-                if self.dpArray[j][i] == self.__hGap[j][i]:
+                if self.dpArray[j][i] == hGap[j][i]:
                     self.direction[j][i] += "L"
-                if self.dpArray[j][i] == self.__vGap[j][i]:
+                if self.dpArray[j][i] == vGap[j][i]:
                     self.direction[j][i] += "U"
-                if self.dpArray[j][i] == self.__match[j][i]:
+                if self.dpArray[j][i] == match[j][i]:
                     self.direction[j][i] += "D"
 
         # Find alignment(s)
@@ -146,26 +145,29 @@ class PairwiseAlignment:
         # Define recurrence matrices
         self.dpArray = np.zeros((vLen, hLen))
         self.direction = [["" for i in range(hLen)] for j in range(vLen)]
+        hGap = np.zeros((len(self.vSeq) + 1, len(self.hSeq) + 1))
+        vGap = np.zeros((len(self.vSeq) + 1, len(self.hSeq) + 1))
+        match = np.zeros((len(self.vSeq) + 1, len(self.hSeq) + 1))
 
         # Affine gap penalty recurrence relation
         for j in range(1, vLen):
             for i in range(1, hLen):
-                self.__hGap[j][i] = max(0, self.__hGap[j][i-1] + extend,
+                hGap[j][i] = max(0, hGap[j][i-1] + extend,
                                         self.dpArray[j][i-1] + exist + extend)
                 
-                self.__vGap[j][i] = max(0, self.__vGap[j-1][i] + extend,
+                vGap[j][i] = max(0, vGap[j-1][i] + extend,
                                         self.dpArray[j-1][i] + exist + extend)
                 
-                self.__match[j][i] = self.dpArray[j-1][i-1] + matrix[self.vSeq[j-1]][self.hSeq[i-1]]
+                match[j][i] = self.dpArray[j-1][i-1] + matrix[self.vSeq[j-1]][self.hSeq[i-1]]
                 
-                self.dpArray[j][i] = max(0, self.__hGap[j][i], self.__vGap[j][i], self.__match[j][i])
+                self.dpArray[j][i] = max(0, hGap[j][i], vGap[j][i], match[j][i])
                 
                 # Direction
-                if self.dpArray[j][i] == self.__hGap[j][i]:
+                if self.dpArray[j][i] == hGap[j][i]:
                     self.direction[j][i] += "L"
-                if self.dpArray[j][i] == self.__vGap[j][i]:
+                if self.dpArray[j][i] == vGap[j][i]:
                     self.direction[j][i] += "U"
-                if self.dpArray[j][i] == self.__match[j][i]:
+                if self.dpArray[j][i] == match[j][i]:
                     self.direction[j][i] += "D"
 
         # Create alignment(s)
