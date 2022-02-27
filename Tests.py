@@ -7,11 +7,14 @@ def test_pairwiseAlignmentGeneral():
     matrix = Score(1, -1, 0, -1, NUCLEOTIDES)
     print(matrix)
     alignment = PairwiseAlignment("GTCGACGCA", "GATTACA", matrix)
-    alignment.Local()
+    alignment.Global()
     alignment.Summary()
     
 def test_matrixValidation():
-    matrix = Score(1, -1, 0, -1, ['A', 'C', 'G'])
+    try:
+        matrix = Score(1, -1, 0, -1, ['A', 'C', 'G'])
+    except:
+        print(f"Error thrown")
     
 def test_phasePortrait():
     model = Model()

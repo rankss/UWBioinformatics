@@ -1,3 +1,4 @@
+from ctypes import alignment
 import numpy as np
 import matplotlib.pyplot as plt
 from Sequence import Sequence
@@ -54,7 +55,7 @@ class PairwiseAlignment:
     def OptimalScore(self):
         return self.optimal
 
-    def __Match(self, temp_path: str):
+    def __Match(self, temp_path: str): # Match has bug for local alignment
         hMatch, vMatch = "", ""
         hCounter, vCounter = 0, 0
         for direction in temp_path:
@@ -126,7 +127,7 @@ class PairwiseAlignment:
             if i > 0 or j > 0:
                 curr = self.direction[j][i]
                 for direction in curr:
-                    GlobalPaths(temp_path + direction, nodes + [[i, j]],
+                    GlobalPaths(temp_path + direction, nodes + [(i, j)],
                                 i + self.__dir_dict[direction][0],
                                 j + self.__dir_dict[direction][1])
             else:
@@ -139,6 +140,7 @@ class PairwiseAlignment:
         self.alignments = []
         self.paths = []
         GlobalPaths("", [], hLen-1, vLen-1)
+        print(self.paths)
         return
 
     def Local(self):
@@ -178,7 +180,7 @@ class PairwiseAlignment:
             if self.dpArray[j][i] != 0:
                 curr = self.direction[j][i]
                 for direction in curr:
-                    LocalPaths(temp_path + direction, nodes + [[i, j]],
+                    LocalPaths(temp_path + direction, nodes + [(i, j)],
                                i + self.__dir_dict[direction][0],
                                j + self.__dir_dict[direction][1])
             else:
@@ -200,7 +202,46 @@ class PairwiseAlignment:
         print(f"Score: {self.optimal}")
         return
     
-    def Summary(self):
+    @staticmethod
+    def StaticGlobal(hSeq: Sequence, vSeq: Sequence, score: Score) -> float:
+        hLen, vLen = len(hSeq) + 1, len(vSeq) + 1
+        exist, extend = score.existence, score.extension
+        matrix = score.matrix
+        # Define recurrence matrices
+        dpArray = np.zeros((vLen, hLen))
+        __vGap = np.zeros((vLen, hLen + 1))
+        __hGap = np.zeros((vLen, hLen + 1))
+        __match = np.zeros((vLen, hLen + 1))
+
+        # Initialize recurrence matrices
+        __vGap[0][0] = -np.Inf
+        __hGap[0][0] = -np.Inf
+        __match[0][0] = -np.Inf
+        
+        for i in range(1, hLen):
+            __vGap[0][i] = exist + i*extend
+            dpArray[0][i] = exist + i*extend
+
+        for j in range(1, vLen):
+            __hGap[j][0] = exist + j*extend
+            dpArray[j][0] = exist + j*extend
+
+        # Affine gap penalty recurrence relation
+        for j in range(1, vLen):
+            for i in range(1, hLen):
+                __hGap[j][i] = max(__hGap[j][i-1] + extend,
+                                        dpArray[j][i-1] + exist + extend)
+                
+                __vGap[j][i] = max(__vGap[j-1][i] + extend,
+                                        dpArray[j-1][i] + exist + extend)
+                
+                __match[j][i] = dpArray[j-1][i-1] + matrix[vSeq[j-1]][hSeq[i-1]]
+                
+                dpArray[j][i] = max(__hGap[j][i], __vGap[j][i], __match[j][i])
+                
+        return dpArray[vLen-1][hLen-1]
+        
+    def Summary(self): # Can be removed
         """Prints summary of pairwise alignment
         """
         row_labels = [" "] + list(self.vSeq.sequence)
@@ -254,15 +295,35 @@ class PairwiseAlignment:
 class MultipleSequenceAlignment:
     """[summary]
     """
-    def __init__(self, sequences: list, sequenceType: list, Score: Score=BLOSUM62):
+    def __init__(self, sequences: list, sequenceType: list, score: Score=BLOSUM62):
         self.sequences = sequences
+        self.score = score
+        self.count = len(self.sequences)
         return
     
     def ClustalW(self):
-        # Construct NW for all pairs
-        # Create guide tree based on score
-        for i, sequence1 in enumerate(self.sequences):
-            for sequence2 in self.sequences[i:]:
-                pass
+        """
+          A  B  C  D  E
+        A -  -  -  -  -
+        B 9  -  -  -  -
+        C 8  11 -  -  - 
+        D 12 15 10 -  -
+        E 15 18 13 5  -
+        """
+        # Create guide tree based on NW score
+        guideMatrix = np.empty((self.count, self.count))
+        for i, hSeq in enumerate(self.sequences[:-1]):
+            for j, vSeq in enumerate(self.sequences, i + 1):
+                guideMatrix[j][i] = PairwiseAlignment.StaticGlobal(hSeq, vSeq, self.score)
+        
+        # UPGMA matrix merging
+        symbols = {i:ord(i+65) for i in range(self.count)} # Define symbols
+        maxIndex = np.unravel_index(guideMatrix.argmax(), guideMatrix.shape) # Find max index
+        # Merge index and update matrix
+        def updateMatrix(matrix: np.ndarray, mergeSymbols: tuple, iteration: int):
+            guideMatrix = np.empty((self.count-1-iteration, self.count-1-iteration))
+            
+            
+            pass
         
         return
