@@ -1,32 +1,21 @@
 from SequenceAlignment import Score, PairwiseAlignment
-from Sequence import NUCLEOTIDES
-from Model import Model
+from Sequence import Sequence, AASequence, NTSequence
 import numpy as np
 
-def test_pairwiseAlignmentGeneral():
-    matrix = Score(1, -1, 0, -1, NUCLEOTIDES)
-    print(matrix)
+def test_pairwiseAlignmentGLOBAL():
+    matrix = Score(1, -1, 0, -2)
     alignment = PairwiseAlignment("GTCGACGCA", "GATTACA", matrix)
-    alignment.Global()
-    alignment.Summary()
+    alignment.Align(PairwiseAlignment.GLOBAL)
+    assert alignment.optimal == -3
+    assert len(alignment.alignments) == 2
+    assert (alignment.dpArray[6] == np.array([-12, -9, -6, -3, -4, -3, 0, -2, -4, -6])).all()
+    print("test_pairwiseAlignmentGLOBAL: Clear")
     
-def test_matrixValidation():
-    try:
-        matrix = Score(1, -1, 0, -1, ['A', 'C', 'G'])
-    except:
-        print(f"Error thrown")
-    
-def test_phasePortrait():
-    model = Model()
-    
-    def dX(x, u):
-        return u*x - x**3
-    
-    def dY(y):
-        return -y
-    
-    X, Y = np.meshgrid(np.arange(-3, 3, 0.01), np.arange(-3, 3, 0.01))
-    model.PhasePortrait(dX, dY, (X, -1), (Y,), X, Y)
-    return
-        
-test_pairwiseAlignmentGeneral()
+def test_SequenceGeneneral():
+    ntseq = Sequence("ACTG")
+    assert type(ntseq) is NTSequence
+    assert ntseq.sequenceType == Sequence.NUCLEOTIDES
+    aaseq = Sequence("ACTGQ")
+    assert type(aaseq) is AASequence
+    assert aaseq.sequenceType == Sequence.AMINO_ACIDS
+    print("test_SequenceGeneneral: Clear")

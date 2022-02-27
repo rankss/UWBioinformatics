@@ -1,8 +1,6 @@
-from ctypes import alignment
 import numpy as np
-import matplotlib.pyplot as plt
 from Sequence import Sequence
-from Matrix import EXAMPLE_MATRIX, Score, BLOSUM62, EXAMPLE_MATRIX
+from Matrix import Score, BLOSUM62
 
 class PairwiseAlignment:
     """Global/Local Pairwise Alignment
@@ -20,11 +18,19 @@ class PairwiseAlignment:
         Local (None): Performs Smith-Waterman with affine gap penalty
         Summary (None): Returns summary of previous alignment
     """
-    def __init__(self, sequence1: str, sequence2: str, score: Score=EXAMPLE_MATRIX):
+    GLOBAL = 0
+    LOCAL = 1
+    __DIR_DICT = {
+        "L": [-1, 0], # Left
+        "U": [0, -1], # Up
+        "D": [-1, -1] # Diagonal
+    }
+    
+    def __init__(self, sequence1: str, sequence2: str, score: Score):
         # self.logger = Logger()
         self.score = score
-        self.hSeq = Sequence(sequence1, self.score.sequenceType)
-        self.vSeq = Sequence(sequence2, self.score.sequenceType)
+        self.hSeq = Sequence(sequence1)
+        self.vSeq = Sequence(sequence2)
         self.dpArray = None
         self.direction = None
         self.paths = None
@@ -34,26 +40,8 @@ class PairwiseAlignment:
         self.__hGap = np.zeros((len(self.vSeq) + 1, len(self.hSeq) + 1))
         self.__vGap = np.zeros((len(self.vSeq) + 1, len(self.hSeq) + 1))
         self.__match = np.zeros((len(self.vSeq) + 1, len(self.hSeq) + 1))
-        
-        self.__dir_dict = {
-            "L": [-1, 0], # Left
-            "U": [0, -1], # Up
-            "D": [-1, -1] # Diagonal
-        }
-        self.__colours = {
-            1: "#ADD8E6", # Blue
-            2: "#90EE90", # Green
-            3: "#FED8B1", # Orange
-            4: "#F4C2C2", # Pink
-            5: "#FFFCBB", # C3
-            6: "#B19CD9", # C4
-            7: "#F7D8BA"  # C5
-        }
 
         return
-    
-    def OptimalScore(self):
-        return self.optimal
 
     def __Match(self, temp_path: str): # Match has bug for local alignment
         hMatch, vMatch = "", ""
@@ -76,7 +64,25 @@ class PairwiseAlignment:
         self.alignments.append(match)
         return
 
-    def Global(self):
+    def __Path(self, temp_path: str, nodes: list, i: int, j: int, alignment=GLOBAL):
+        if alignment == PairwiseAlignment.GLOBAL:
+            comparison = i > 0 or j > 0
+        if alignment == PairwiseAlignment.LOCAL:
+            comparison = self.dpArray[j][i] != 0
+            
+        if comparison:
+            curr = self.direction[j][i]
+            for direction in curr:
+                self.__Path(temp_path + direction, nodes + [(i, j)],
+                            i + PairwiseAlignment.__DIR_DICT[direction][0],
+                            j + PairwiseAlignment.__DIR_DICT[direction][1],
+                            alignment)
+        else:
+            self.__Match(temp_path[::-1])
+            self.paths.append(nodes)
+        return
+        
+    def __Global(self):
         """Performs Needleman-Wunsch for sequence pair with affine gap penalty
         """
         hLen, vLen = len(self.hSeq) + 1, len(self.vSeq) + 1
@@ -122,28 +128,15 @@ class PairwiseAlignment:
                     self.direction[j][i] += "U"
                 if self.dpArray[j][i] == self.__match[j][i]:
                     self.direction[j][i] += "D"
-                    
-        def GlobalPaths(temp_path: str, nodes: list, i: int, j: int):
-            if i > 0 or j > 0:
-                curr = self.direction[j][i]
-                for direction in curr:
-                    GlobalPaths(temp_path + direction, nodes + [(i, j)],
-                                i + self.__dir_dict[direction][0],
-                                j + self.__dir_dict[direction][1])
-            else:
-                self.__Match(temp_path[::-1])
-                self.paths.append(nodes)
-            return
 
         # Find alignment(s)
         self.optimal = self.dpArray[vLen-1][hLen-1]
         self.alignments = []
         self.paths = []
-        GlobalPaths("", [], hLen-1, vLen-1)
-        print(self.paths)
-        return
+        self.__Path("", [], hLen-1, vLen-1, PairwiseAlignment.GLOBAL)
+        return 
 
-    def Local(self):
+    def __Local(self):
         """Performs Smith-Waterman for sequence pair with affine gap penalty
         """
         hLen, vLen = len(self.hSeq) + 1, len(self.vSeq) + 1
@@ -174,19 +167,6 @@ class PairwiseAlignment:
                     self.direction[j][i] += "U"
                 if self.dpArray[j][i] == self.__match[j][i]:
                     self.direction[j][i] += "D"
-                    
-        def LocalPaths(temp_path: str, nodes: list, i: int, j: int):
-            # Perform depth first walk to nearest 0 while obtaining matching
-            if self.dpArray[j][i] != 0:
-                curr = self.direction[j][i]
-                for direction in curr:
-                    LocalPaths(temp_path + direction, nodes + [(i, j)],
-                               i + self.__dir_dict[direction][0],
-                               j + self.__dir_dict[direction][1])
-            else:
-                self.__Match(temp_path[::-1])
-                self.paths.append(nodes)
-            return
 
         # Create alignment(s)
         self.alignments = []
@@ -195,18 +175,26 @@ class PairwiseAlignment:
         for j in range(vLen):
             for i in range(hLen):
                 if self.dpArray[j][i] == self.optimal:
-                    LocalPaths("", [], i, j)
-        print(self.paths)
-        for i in range(len(self.alignments)):
-            print(f"Alignment {i+1}\n{self.alignments[i]}")
-        print(f"Score: {self.optimal}")
+                    self.__Path("", [], i, j, PairwiseAlignment.LOCAL)
         return
     
+    def Align(self, alignment=GLOBAL):
+        if alignment == PairwiseAlignment.GLOBAL:
+            self.__Global()
+        if alignment == PairwiseAlignment.LOCAL:
+            self.__Local()
+        return
+    
+    def Info(self):
+        pass
+    
     @staticmethod
-    def StaticGlobal(hSeq: Sequence, vSeq: Sequence, score: Score) -> float:
+    def Global(hSeq: str, vSeq: str, score: Score) -> float:
+        hSeq, vSeq = Sequence(hSeq), Sequence(vSeq)
         hLen, vLen = len(hSeq) + 1, len(vSeq) + 1
         exist, extend = score.existence, score.extension
         matrix = score.matrix
+        
         # Define recurrence matrices
         dpArray = np.zeros((vLen, hLen))
         __vGap = np.zeros((vLen, hLen + 1))
@@ -230,68 +218,46 @@ class PairwiseAlignment:
         for j in range(1, vLen):
             for i in range(1, hLen):
                 __hGap[j][i] = max(__hGap[j][i-1] + extend,
-                                        dpArray[j][i-1] + exist + extend)
+                                   dpArray[j][i-1] + exist + extend)
                 
                 __vGap[j][i] = max(__vGap[j-1][i] + extend,
-                                        dpArray[j-1][i] + exist + extend)
+                                   dpArray[j-1][i] + exist + extend)
                 
                 __match[j][i] = dpArray[j-1][i-1] + matrix[vSeq[j-1]][hSeq[i-1]]
                 
                 dpArray[j][i] = max(__hGap[j][i], __vGap[j][i], __match[j][i])
                 
         return dpArray[vLen-1][hLen-1]
+
+    @staticmethod
+    def Local(hSeq: str, vSeq: str, score: Score) -> float:
+        hSeq, vSeq = Sequence(hSeq), Sequence(vSeq)
+        hLen, vLen = len(hSeq) + 1, len(vSeq) + 1
+        exist, extend = score.existence, score.extension
+        matrix = score.matrix
         
-    def Summary(self): # Can be removed
-        """Prints summary of pairwise alignment
-        """
-        row_labels = [" "] + list(self.vSeq.sequence)
-        col_labels = [" "] + list(self.hSeq.sequence)
-
-        cell_colours = [["w" for i in range(len(col_labels))] for j in range(len(row_labels))]
-
-        for i in range(len(self.paths)):
-            for j in range(len(self.paths[i])):
-                node = self.paths[i][j]
-                if j == 0:
-                    cell_colours[node[1]][node[0]] = self.__colours[1]
-                else:
-                    if cell_colours[node[1]][node[0]] == "w":
-                        cell_colours[node[1]][node[0]] = self.__colours[i+3]
-                    elif cell_colours[node[1]][node[0]] == self.__colours[1]:
-                        pass
-                    else:
-                        cell_colours[node[1]][node[0]] = self.__colours[2]
-
-        fig, axis = plt.subplots(2)
-        fig.suptitle("Trace")
-        axis[0].set_axis_off()
-        axis[0].table(cellText = self.dpArray,
-                      cellColours = cell_colours,
-                      rowLabels = row_labels,
-                      rowColours = ["#ADD8E6" for row in row_labels],
-                      rowLoc = "center",
-                      colLabels = col_labels,
-                      colColours = ["#ADD8E6" for col in col_labels],
-                      colWidths = [0.05 for col in col_labels],
-                      colLoc = "center",
-                      cellLoc = "center",
-                      loc = "center")
-
-        axis[1].set_axis_off()
-        axis[1].table(cellText = self.direction,
-                      cellColours = cell_colours,
-                      rowLabels = row_labels,
-                      rowColours = ["#ADD8E6" for row in row_labels],
-                      rowLoc = "center",
-                      colLabels = col_labels,
-                      colColours = ["#ADD8E6" for col in col_labels],
-                      colWidths = [0.05 for col in col_labels],
-                      colLoc = "center",
-                      cellLoc = "center",
-                      loc = "center")
-        plt.show()
-        return
-
+        # Define recurrence matrices
+        dpArray = np.zeros((vLen, hLen))
+        __vGap = np.zeros((vLen, hLen + 1))
+        __hGap = np.zeros((vLen, hLen + 1))
+        __match = np.zeros((vLen, hLen + 1))
+        
+        # Affine gap penalty recurrence relation
+        for j in range(1, vLen):
+            for i in range(1, hLen):
+                __hGap[j][i] = max(0, __hGap[j][i-1] + extend,
+                                   dpArray[j][i-1] + exist + extend)
+                
+                __vGap[j][i] = max(0, __vGap[j-1][i] + extend,
+                                   dpArray[j-1][i] + exist + extend)
+                
+                __match[j][i] = dpArray[j-1][i-1] + matrix[vSeq[j-1]][hSeq[i-1]]
+                
+                dpArray[j][i] = max(0, __hGap[j][i], __vGap[j][i], __match[j][i])
+                
+        return np.max(dpArray)
+        
+    
 class MultipleSequenceAlignment:
     """[summary]
     """
@@ -314,7 +280,7 @@ class MultipleSequenceAlignment:
         guideMatrix = np.empty((self.count, self.count))
         for i, hSeq in enumerate(self.sequences[:-1]):
             for j, vSeq in enumerate(self.sequences, i + 1):
-                guideMatrix[j][i] = PairwiseAlignment.StaticGlobal(hSeq, vSeq, self.score)
+                guideMatrix[j][i] = PairwiseAlignment.Global(hSeq, vSeq, self.score)
         
         # UPGMA matrix merging
         symbols = {i:ord(i+65) for i in range(self.count)} # Define symbols

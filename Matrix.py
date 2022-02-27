@@ -1,47 +1,18 @@
-from Error import InvalidMatrixError, InvalidSequenceTypeError
-from Sequence import NUCLEOTIDES, AMINO_ACIDS
+from Error import InvalidMatrixError
+from Sequence import Sequence
 
 class Score:
     """_summary_
     """
-    def __init__(self, match: int, mismatch: int, existence: int, extension: int, sequenceType: list):
+    
+    def __init__(self, match: int, mismatch: int, existence: int, extension: int):
         self.matrix = None
         self.match = match
         self.mismatch = mismatch
         self.existence = existence
         self.extension = extension
-        self.sequenceType = sequenceType
         self.__Construct()
         return
-
-    def __str__(self):
-        """Output Format
-        =====================
-        | GapExistence: -11 |
-        | GapExtension: -1  |
-        =====================
-        |   | A | G | C | T |
-        |---|---|---|---|---|
-        | A | 1 |-1 |-1 |-1 |
-        |---|---|---|---|---|
-        | G |-1 | 1 |-1 |-1 |
-        |---|---|---|---|---|
-        | C |-1 |-1 | 1 |-1 |
-        |---|---|---|---|---|
-        | T |-1 |-1 |-1 | 1 |
-        =====================
-        """
-        times_across = len(self.sequenceType) + 1
-        output = "="*(4*times_across+1) + f"\n| GapExistence: {str(self.existence).rjust(3).ljust(4)}|\n| GapExtension: {str(self.extension).rjust(3).ljust(4)}|\n"
-        output += "="*(4*times_across+1) + "\n|   |"
-        for hmonomer in self.sequenceType:
-            output += f"{hmonomer.rjust(2).ljust(3)}|"
-        for vmonomer in self.sequenceType:
-            output += "\n" + "|---"*times_across + "|\n" + f"|{vmonomer.rjust(2).ljust(3)}|"
-            for hmonomer in self.sequenceType:
-                output += f"{str(self.matrix[vmonomer][hmonomer]).rjust(2).ljust(3)}|"
-        output += "\n" + "="*(4*times_across+1)
-        return output
 
     def __ValidateMatrix(self):
         size = len(self.matrix.keys())
@@ -58,13 +29,10 @@ class Score:
         return
     
     def __Construct(self):
-        if self.sequenceType not in [NUCLEOTIDES, AMINO_ACIDS]:
-            raise InvalidSequenceTypeError()
-
         self.matrix = {}
-        for vmonomer in self.sequenceType:
+        for vmonomer in Sequence.AMINO_ACIDS:
             self.matrix[vmonomer] = {}
-            for hmonomer in self.sequenceType:
+            for hmonomer in Sequence.AMINO_ACIDS:
                 if vmonomer == hmonomer:
                     self.matrix[vmonomer][hmonomer] = self.match
                 else:
@@ -80,13 +48,6 @@ class Score:
         return
 
 # Constants
-EXAMPLE_MATRIX = {
-    'A': {'A': 1, 'G': 0, 'C': 0, 'T': 0},
-    'G': {'A': 0, 'G': 1, 'C': 0, 'T': 0},
-    'C': {'A': 0, 'G': 0, 'C': 1, 'T': 0},
-    'T': {'A': 0, 'G': 0, 'C': 0, 'T': 1}
-}
-
 BLOSUM62 = {
     "A":{"A":  4, "R": -1, "N": -2, "D": -2, "C":  0, "Q": -1, "E": -1, "G":  0, "H": -2, "I": -1, "L": -1, "K": -1, "M": -1, "F": -2, "P": -1, "S":  1, "T":  0, "W": -3, "Y": -2, "V":  0, "B": -2, "Z": -1, "X":  0, "*": -4}, 
     "R":{"A": -1, "R":  5, "N":  0, "D": -2, "C": -3, "Q":  1, "E":  0, "G": -2, "H":  0, "I": -3, "L": -2, "K":  2, "M": -1, "F": -3, "P": -2, "S": -1, "T": -1, "W": -3, "Y": -2, "V": -3, "B": -1, "Z":  0, "X": -1, "*": -4}, 

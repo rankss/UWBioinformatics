@@ -7,6 +7,10 @@ from typing import Callable
 class Model:
     """
     """
+    def __init__(self, matrix: np.ndarray, v: np.ndarray):
+        self.matrix = matrix
+        self.v = v
+    
     def Normalize(self, x, y):
         return x/(np.sqrt(x**2 + y**2)), y/(np.sqrt(x**2 + y**2))
     

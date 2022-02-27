@@ -1,15 +1,21 @@
-from Error import InvalidSequenceError, InvalidSequenceTypeError
+from Error import InvalidSequenceError
 
 class Sequence:
     """_summary_
     """
-    def __init__(self, sequence: str, sequenceType: list):
+    
+    NUCLEOTIDES = ['A', 'C', 'G', 'T']
+    AMINO_ACIDS = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
+    
+    def __init__(self, sequence: str, sequenceType=None):
         self.sequence = sequence
         self.sequenceType = sequenceType
         self.summary = {}
+        
         self.__Clean()
-        self.__Validate()
-        if type(self) == Sequence:
+        if self.sequenceType is None:
+            self.__AutoDetectSequenceType()
+        if type(self) is Sequence:
             self.__Transform()
         return
 
@@ -25,21 +31,24 @@ class Sequence:
     def __Clean(self):
         self.sequence = self.sequence.strip().upper()
         return
-
-    def __Validate(self):
-        if self.sequenceType not in [NUCLEOTIDES, AMINO_ACIDS]:
-            raise InvalidSequenceTypeError()
-        
-        for monomer in self.sequence:
-            if monomer not in self.sequenceType:
-                raise InvalidSequenceError(f"InvalidSequenceError: {monomer} is not valid")
-        return
     
     def __Transform(self):
-        if self.sequenceType == AMINO_ACIDS:
-            self.__class__ = AASequence
-        if self.sequenceType == NUCLEOTIDES:
+        if self.sequenceType == Sequence.NUCLEOTIDES:
             self.__class__ = NTSequence
+            return
+        if self.sequenceType == Sequence.AMINO_ACIDS:
+            self.__class__ = AASequence
+            return
+        return
+    
+    def __AutoDetectSequenceType(self):
+        monomers = set(self.sequence)
+        if monomers.issubset(set(Sequence.NUCLEOTIDES)):
+            self.sequenceType = Sequence.NUCLEOTIDES
+            return
+        if monomers.issubset(set(Sequence.AMINO_ACIDS)):
+            self.sequenceType = Sequence.AMINO_ACIDS
+            return
         return
             
     def FindSubsequence(self, subsequence: str, overlapping=True):
@@ -177,8 +186,6 @@ class NTSequence(Sequence):
         pass
     
 # Constants
-NUCLEOTIDES = ['A', 'C', 'G', 'T']
-AMINO_ACIDS = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
     
 COMPLEMENT = {
     'A': 'T',
