@@ -15,17 +15,10 @@ class Score:
         return
 
     def __ValidateMatrix(self):
-        size = len(self.matrix.keys())
-        if size != len(self.sequenceType):
-            raise InvalidMatrixError(f"InvalidMatrixError: Size Given = {size} | Expected = {len(self.sequenceType)}")
-
         for key in self.matrix.keys():
-            if key not in self.sequenceType:
+            if key not in Sequence.AMINO_ACIDS:
                 raise InvalidMatrixError(f"InvalidMatrixError: {key} is not a valid amino acid")
 
-        for monomer in self.sequenceType:
-            if monomer not in self.matrix.keys():
-                raise InvalidMatrixError(f"InvalidMatrixError: {monomer} is not found in matrix")
         return
     
     def __Construct(self):

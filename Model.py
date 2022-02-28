@@ -1,4 +1,3 @@
-from ast import Call
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import odeint
@@ -7,9 +6,10 @@ from typing import Callable
 class Model:
     """
     """
-    def __init__(self, matrix: np.ndarray, v: np.ndarray):
+    def __init__(self, matrix: np.ndarray, rates: np.ndarray):
         self.matrix = matrix
-        self.v = v
+        self.rates = rates
+        self.expressions = np.dot(self.matrix, self.rates)
     
     def Normalize(self, x, y):
         return x/(np.sqrt(x**2 + y**2)), y/(np.sqrt(x**2 + y**2))

@@ -49,7 +49,7 @@ class Sequence:
         if monomers.issubset(set(Sequence.AMINO_ACIDS)):
             self.sequenceType = Sequence.AMINO_ACIDS
             return
-        return
+        raise InvalidSequenceError()
             
     def FindSubsequence(self, subsequence: str, overlapping=True):
         """Find all occurrences of subsequences in forward strand.

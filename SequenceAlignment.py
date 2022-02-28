@@ -1,6 +1,6 @@
 import numpy as np
 from Sequence import Sequence
-from Matrix import Score, BLOSUM62
+from Score import Score, BLOSUM62
 
 class PairwiseAlignment:
     """Global/Local Pairwise Alignment
