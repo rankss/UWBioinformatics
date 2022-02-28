@@ -1,6 +1,7 @@
 import numpy as np
 from Sequence import Sequence
 from Score import Score
+from typing import Literal
 
 class PairwiseAlignment:
     """Global/Local Pairwise Alignment
@@ -60,7 +61,7 @@ class PairwiseAlignment:
         self.alignments.append(match)
         return
 
-    def __Path(self, temp_path: str, nodes: list, i: int, j: int, alignment=GLOBAL):
+    def __Path(self, temp_path: str, nodes: list, i: int, j: int, alignment: Literal=GLOBAL):
         if alignment == PairwiseAlignment.GLOBAL:
             comparison = i > 0 or j > 0
         if alignment == PairwiseAlignment.LOCAL:
@@ -180,7 +181,7 @@ class PairwiseAlignment:
                     self.__Path("", [], i, j, PairwiseAlignment.LOCAL)
         return
     
-    def Align(self, alignment=GLOBAL):
+    def Align(self, alignment: Literal=GLOBAL):
         if alignment == PairwiseAlignment.GLOBAL:
             self.__Global()
         if alignment == PairwiseAlignment.LOCAL:
@@ -263,7 +264,7 @@ class PairwiseAlignment:
 class MultipleSequenceAlignment:
     """[summary]
     """
-    def __init__(self, sequences: list, score: Score=Score.BLOSUM62):
+    def __init__(self, sequences: list, score: Score):
         self.sequences = sequences
         self.score = score
         self.count = len(self.sequences)
