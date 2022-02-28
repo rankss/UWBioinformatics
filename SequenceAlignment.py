@@ -1,6 +1,6 @@
 import numpy as np
 from Sequence import Sequence
-from Score import Score, BLOSUM62
+from Score import Score
 
 class PairwiseAlignment:
     """Global/Local Pairwise Alignment
@@ -263,7 +263,7 @@ class PairwiseAlignment:
 class MultipleSequenceAlignment:
     """[summary]
     """
-    def __init__(self, sequences: list, score: Score=BLOSUM62):
+    def __init__(self, sequences: list, score: Score=Score.BLOSUM62):
         self.sequences = sequences
         self.score = score
         self.count = len(self.sequences)
