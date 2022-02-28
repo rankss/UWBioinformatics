@@ -263,7 +263,7 @@ class PairwiseAlignment:
 class MultipleSequenceAlignment:
     """[summary]
     """
-    def __init__(self, sequences: list, sequenceType: list, score: Score=BLOSUM62):
+    def __init__(self, sequences: list, score: Score=BLOSUM62):
         self.sequences = sequences
         self.score = score
         self.count = len(self.sequences)

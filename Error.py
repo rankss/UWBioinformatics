@@ -8,7 +8,7 @@ class Error(Exception):
     """
     def __init__(self, message: str):
         super().__init__()
-        self.logger = Logger()
+        # self.logger = Logger()
         self.message = message
 
     def __str__(self):

@@ -6,6 +6,12 @@ class Sequence:
     
     NUCLEOTIDES = ['A', 'C', 'G', 'T']
     AMINO_ACIDS = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
+    COMPLEMENT = {
+        'A': 'T',
+        'T': 'A',
+        'C': 'G',
+        'G': 'C'
+    }
     
     def __init__(self, sequence: str, sequenceType=None):
         self.sequence = sequence
@@ -13,6 +19,7 @@ class Sequence:
         self.summary = {}
         
         self.__Clean()
+        self.__Validate()
         if self.sequenceType is None:
             self.__AutoDetectSequenceType()
         if type(self) is Sequence:
@@ -31,6 +38,10 @@ class Sequence:
     def __Clean(self):
         self.sequence = self.sequence.strip().upper()
         return
+    
+    def __Validate(self):
+        if not len(self.sequence):
+            raise InvalidSequenceError("Sequence is length zero.")
     
     def __Transform(self):
         if self.sequenceType == Sequence.NUCLEOTIDES:
@@ -71,7 +82,7 @@ class Sequence:
             indices.append(index)
             index = self.sequence.find(subsequence,
                                        index + (1 if overlapping else len(subsequence)))
-        return
+        return indices
     
     def Length(self):
         self.summary["length"] = len(self.sequence)
@@ -90,6 +101,9 @@ class AASequence(Sequence):
         
 class NTSequence(Sequence):
     
+    def __init__(self, sequence: str, sequenceType=Sequence.NUCLEOTIDES):
+        super().__init__(sequence, sequenceType)
+    
     def Complement(self):
         """Computes the reverse complement of a sequence.
 
@@ -98,7 +112,7 @@ class NTSequence(Sequence):
         """
         complement = ""
         for monomer in self.sequence:
-            complement += COMPLEMENT[monomer]
+            complement += Sequence.COMPLEMENT[monomer]
             
         return NTSequence(complement[::-1])
     
@@ -187,12 +201,7 @@ class NTSequence(Sequence):
     
 # Constants
     
-COMPLEMENT = {
-    'A': 'T',
-    'T': 'A',
-    'C': 'G',
-    'G': 'C'
-}
+
 
 CODON = {
     # 'M' - START, '_' - STOP
