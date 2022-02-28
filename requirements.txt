@@ -1,6 +1,1 @@
-numpy==1.22.2
-pandas==1.4.1
-PyQt5-Qt5==5.15.2
-PyQt5-sip==12.9.1
-pytest==7.0.1
-scipy==1.8.0
+numpy>=1.22.2
