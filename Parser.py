@@ -8,6 +8,7 @@ class Parser:
             lines = [line.strip() for line in file]
         
         sequence = ""
+        sequenceName = ""
         sequenceCollection = []
         for line in lines:
             if line[0] == '>':
