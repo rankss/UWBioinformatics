@@ -1,7 +1,7 @@
-from SequenceAlignment import Score, PairwiseAlignment
+from SequenceAlignment import PairwiseAlignment
 from Sequence import Sequence, AASequence, NTSequence
+from Score import Score
 from Parser import Parser
-import numpy as np
  
 def test_SequenceGeneneral():
     NTSeq = Sequence("ACTG")
@@ -35,6 +35,21 @@ def test_NTSequenceFindFRSubsequence():
     assert frIndices["forward"] == [1, 4, 10]
     assert frIndices["reverse"] == [0]
     print("test_NTSequenceFindFRSubsequence: Clear")
+    
+def test_NTSequenceToAASequence():
+    NTSeq = Sequence("ATGAATTAA")
+    AASeqs = NTSeq.ToAASequence()
+    print(AASeqs[0])
+    assert AASeqs[0] == AASequence("MN")
+    assert AASeqs[1] == AASequence("")
+    assert AASeqs[2] == AASequence("EL")
+    print("test_NTSequenceToAASequence: Clear")
+    
+def test_NTSequenceTo6AASequences():
+    pass
+
+def test_NTSequenceTo6AASequences():
+    pass
 
 def test_pairwiseAlignmentGlobal():
     matrix = Score(1, -1, 0, -2)
@@ -42,7 +57,7 @@ def test_pairwiseAlignmentGlobal():
     alignment.Align(PairwiseAlignment.GLOBAL)
     assert alignment.optimal == -3
     assert len(alignment.alignments) == 2
-    assert (alignment.dpArray[6] == np.array([-12, -9, -6, -3, -4, -3, 0, -2, -4, -6])).all()
+    assert (alignment.dpArray[6] == [-12, -9, -6, -3, -4, -3, 0, -2, -4, -6]).all()
     print("test_pairwiseAlignmentGlobal: Clear")
 
 def test_parserFasta():

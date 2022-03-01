@@ -1,4 +1,4 @@
-from Error import InvalidSequenceError
+from Error import InvalidSequenceError, InvalidSequenceTypeError
 from typing import Literal
 
 class Sequence:
@@ -13,6 +13,30 @@ class Sequence:
         'C': 'G',
         'G': 'C'
     }
+    CODON_DICT = {
+        # 'M' - START, '_' - STOP
+        "GCT": "A", "GCC": "A", "GCA": "A", "GCG": "A",
+        "TGT": "C", "TGC": "C",
+        "GAT": "D", "GAC": "D",
+        "GAA": "E", "GAG": "E",
+        "TTT": "F", "TTC": "F",
+        "GGT": "G", "GGC": "G", "GGA": "G", "GGG": "G",
+        "CAT": "H", "CAC": "H",
+        "ATA": "I", "ATT": "I", "ATC": "I",
+        "AAA": "K", "AAG": "K",
+        "TTA": "L", "TTG": "L", "CTT": "L", "CTC": "L", "CTA": "L", "CTG": "L",
+        "ATG": "M",
+        "AAT": "N", "AAC": "N",
+        "CCT": "P", "CCC": "P", "CCA": "P", "CCG": "P",
+        "CAA": "Q", "CAG": "Q",
+        "CGT": "R", "CGC": "R", "CGA": "R", "CGG": "R", "AGA": "R", "AGG": "R",
+        "TCT": "S", "TCC": "S", "TCA": "S", "TCG": "S", "AGT": "S", "AGC": "S",
+        "ACT": "T", "ACC": "T", "ACA": "T", "ACG": "T",
+        "GTT": "V", "GTC": "V", "GTA": "V", "GTG": "V",
+        "TGG": "W",
+        "TAT": "Y", "TAC": "Y",
+        "TAA": "_", "TAG": "_", "TGA": "_"
+    }
     
     def __init__(self, sequence: str, sequenceName: str=None, sequenceType: Literal=None):
         self.sequence = sequence
@@ -21,9 +45,9 @@ class Sequence:
         self.summary = {}
         
         self.__Clean()
-        self.__Validate()
         if self.sequenceType is None:
             self.__AutoDetectSequenceType()
+        self.__Validate()
         if type(self) is Sequence:
             self.__Transform()
         return
@@ -38,18 +62,18 @@ class Sequence:
         return len(self.sequence)
     
     def __eq__(self, other):
-        sameName = self.sequenceName == other.sequenceName
         sameSequence = self.sequence == other.sequence
+        sameName = self.sequenceName == other.sequenceName
         sameType = self.sequenceType == other.sequenceType
-        return sameName and sameSequence and sameType
+        return sameSequence and sameName and sameType
 
     def __Clean(self):
         self.sequence = self.sequence.strip().upper()
         return
     
     def __Validate(self):
-        if not len(self.sequence):
-            raise InvalidSequenceError("Sequence is length zero.")
+        if self.sequenceType not in [Sequence.NUCLEOTIDES, Sequence.AMINO_ACIDS]:
+            raise InvalidSequenceTypeError("Sequence type is not valid.")
     
     def __Transform(self):
         if self.sequenceType == Sequence.NUCLEOTIDES:
@@ -68,7 +92,7 @@ class Sequence:
         if monomers.issubset(set(Sequence.AMINO_ACIDS)):
             self.sequenceType = Sequence.AMINO_ACIDS
             return
-        raise InvalidSequenceError()
+        raise InvalidSequenceError("Sequence is neither a protein nor DNA.")
             
     def FindSubsequence(self, subsequence: str, overlapping=True):
         """Find all occurrences of subsequences in forward strand.
@@ -104,13 +128,16 @@ class Sequence:
         
 class AASequence(Sequence):
     
+    def __init__(self, sequence: str, sequenceName: str=None, sequenceType: Literal=Sequence.AMINO_ACIDS):
+        super().__init__(sequence, sequenceName, sequenceType)
+    
     def ToDNASequence(self):
         return
         
 class NTSequence(Sequence):
     
-    def __init__(self, sequence: str, sequenceType=Sequence.NUCLEOTIDES):
-        super().__init__(sequence, sequenceType)
+    def __init__(self, sequence: str, sequenceName: str=None, sequenceType=Sequence.NUCLEOTIDES):
+        super().__init__(sequence, sequenceName, sequenceType)
     
     def Complement(self):
         """Computes the reverse complement of a sequence.
@@ -134,25 +161,36 @@ class NTSequence(Sequence):
         Returns:
             _type_: _description_
         """
-        forwardIndices = self.FindSubsequence(subsequence, overlapping)
-        reverseIndices = self.Complement().FindSubsequence(subsequence, overlapping)
-        indices = {"forward": forwardIndices, "reverse": reverseIndices}
+        indices = {
+            "forward": self.FindSubsequence(subsequence, overlapping), 
+            "reverse": self.Complement().FindSubsequence(subsequence, overlapping)
+        }
+        
         return indices
     
-    def ToAASequence(self, sequence):
-        translatedSequence = ""
-        for i in range(0, len(sequence), 3):
-            translatedSequence += CODON[sequence[i:i+3]]
-        return AASequence(translatedSequence)
+    def ToAASequence(self):
+        AASequences = []
+        for i in range(3):
+            translatedSequence = ""
+            for j in range(i, len(self.sequence), 3):
+                codon = self.sequence[j:j+3]
+                if codon not in Sequence.CODON_DICT.keys():
+                    break
+                if Sequence.CODON_DICT[codon] == "_":
+                    break
+                translatedSequence += Sequence.CODON_DICT[codon]
+            AASequences.append(AASequence(translatedSequence))
+        return AASequences
     
     def To6AASequences(self):
         """_summary_
         """
-        AASequences = {"forward": [], "reverse": []}
-        reverseSequence = self.Complement().sequence
-        for i in range(0, 3):
-            AASequences["forward"].append(self.ToAASequence(self.sequence[i:]))
-            AASequences["reverse"].append(self.ToAASequence(reverseSequence[i:]))
+        reverseSequence = self.Complement()
+        AASequences = {
+            "forward": self.ToAASequence(),
+            "reverse": reverseSequence.ToAASequence()
+        }
+        
         return AASequences
     
     def tRNAScan(self):
@@ -211,27 +249,4 @@ class NTSequence(Sequence):
     
 
 
-CODON = {
-    # 'M' - START, '_' - STOP
-    "GCT": "A", "GCC": "A", "GCA": "A", "GCG": "A",
-    "TGT": "C", "TGC": "C",
-    "GAT": "D", "GAC": "D",
-    "GAA": "E", "GAG": "E",
-    "TTT": "F", "TTC": "F",
-    "GGT": "G", "GGC": "G", "GGA": "G", "GGG": "G",
-    "CAT": "H", "CAC": "H",
-    "ATA": "I", "ATT": "I", "ATC": "I",
-    "AAA": "K", "AAG": "K",
-    "TTA": "L", "TTG": "L", "CTT": "L", "CTC": "L", "CTA": "L", "CTG": "L",
-    "ATG": "M",
-    "AAT": "N", "AAC": "N",
-    "CCT": "P", "CCC": "P", "CCA": "P", "CCG": "P",
-    "CAA": "Q", "CAG": "Q",
-    "CGT": "R", "CGC": "R", "CGA": "R", "CGG": "R", "AGA": "R", "AGG": "R",
-    "TCT": "S", "TCC": "S", "TCA": "S", "TCG": "S", "AGT": "S", "AGC": "S",
-    "ACT": "T", "ACC": "T", "ACA": "T", "ACG": "T",
-    "GTT": "V", "GTC": "V", "GTA": "V", "GTG": "V",
-    "TGG": "W",
-    "TAT": "Y", "TAC": "Y",
-    "TAA": "_", "TAG": "_", "TGA": "_"
-}
+
