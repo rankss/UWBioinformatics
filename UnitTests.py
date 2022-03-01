@@ -1,5 +1,6 @@
 from SequenceAlignment import Score, PairwiseAlignment
 from Sequence import Sequence, AASequence, NTSequence
+from Parser import Parser
 import numpy as np
  
 def test_SequenceGeneneral():
@@ -9,7 +10,7 @@ def test_SequenceGeneneral():
     AASeq = Sequence("ACTGQ")
     assert type(AASeq) is AASequence
     assert AASeq.sequenceType == Sequence.AMINO_ACIDS
-    AASeq = Sequence("ACGACG", Sequence.AMINO_ACIDS)
+    AASeq = Sequence("ACGACG", sequenceType=Sequence.AMINO_ACIDS)
     assert type(AASeq) is AASequence
     assert AASeq.sequenceType == Sequence.AMINO_ACIDS
     print("test_SequenceGeneneral: Clear")
@@ -43,3 +44,14 @@ def test_pairwiseAlignmentGlobal():
     assert len(alignment.alignments) == 2
     assert (alignment.dpArray[6] == np.array([-12, -9, -6, -3, -4, -3, 0, -2, -4, -6])).all()
     print("test_pairwiseAlignmentGlobal: Clear")
+
+def test_parserFasta():
+    filename = "test.fasta"
+    collection = Parser.Fasta(filename)
+    assert collection[0].sequenceName == "A"
+    assert collection[1].sequenceName == "B"
+    assert collection[2].sequenceName == "C"
+    assert collection[0] == Sequence("tgcaccaaacatgtctaaagctggaaccaaaattactttctttgaagacaaaaactttcaaggccgccactatgacagcgattgcgactgtgcagatttccacatgtacctgagccgctg", "A")
+    assert collection[1] == Sequence("tgcaccaaacatgtctaaagctggaaccaaaattactttctttgaagacaaaaactttcaaggccgccactatgacagcgattgcgactgtgcagatttccacatgtacctgagccgctg", "B")
+    assert collection[2] == Sequence("tgcaccaaacatgtctaaagctggaaccaaaattactttctttgaagacaaaaactttcaaggccgccactatgacagcgattgcgactgtgcagatttccacatgtacctgagccgctg", "C")
+    print("test_parserFasta: Clear")

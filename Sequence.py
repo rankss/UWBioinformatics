@@ -1,4 +1,5 @@
 from Error import InvalidSequenceError
+from typing import Literal
 
 class Sequence:
     """_summary_
@@ -13,8 +14,9 @@ class Sequence:
         'G': 'C'
     }
     
-    def __init__(self, sequence: str, sequenceType=None):
+    def __init__(self, sequence: str, sequenceName: str=None, sequenceType: Literal=None):
         self.sequence = sequence
+        self.sequenceName = sequenceName
         self.sequenceType = sequenceType
         self.summary = {}
         
@@ -34,6 +36,12 @@ class Sequence:
     
     def __len__(self):
         return len(self.sequence)
+    
+    def __eq__(self, other):
+        sameName = self.sequenceName == other.sequenceName
+        sameSequence = self.sequence == other.sequence
+        sameType = self.sequenceType == other.sequenceType
+        return sameName and sameSequence and sameType
 
     def __Clean(self):
         self.sequence = self.sequence.strip().upper()
