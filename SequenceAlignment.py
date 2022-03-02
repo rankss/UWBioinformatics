@@ -270,29 +270,17 @@ class MultipleSequenceAlignment:
         self.count = len(self.sequences)
         return
     
+    @staticmethod
+    def UPGMA(distMatrix: np.ndarray, taxa: list, ):
+        pass
+    
     def ClustalW(self):
         """
-          A  B  C  D  E
-        A -  -  -  -  -
-        B 9  -  -  -  -
-        C 8  11 -  -  - 
-        D 12 15 10 -  -
-        E 15 18 13 5  -
+          A  B  C  D  E           A  BE C  D
+        A -  -  -  -  -        A  -  -  -  -
+        B 9  -  -  -  - (E, B) BE 12
+        C 8  11 -  -  -  --->  C  8  12
+        D 12 15 10 -  -        D  12 10 10
+        E 15 18 13 5  -       
         """
-        # Create guide tree based on NW score
-        guideMatrix = np.empty((self.count, self.count))
-        for i, hSeq in enumerate(self.sequences[:-1]):
-            for j, vSeq in enumerate(self.sequences, i + 1):
-                guideMatrix[j][i] = PairwiseAlignment.Global(hSeq, vSeq, self.score)
-        
-        # UPGMA matrix merging
-        symbols = {i:ord(i+65) for i in range(self.count)} # Define symbols
-        maxIndex = np.unravel_index(guideMatrix.argmax(), guideMatrix.shape) # Find max index
-        # Merge index and update matrix
-        def updateMatrix(matrix: np.ndarray, mergeSymbols: tuple, iteration: int):
-            guideMatrix = np.empty((self.count-1-iteration, self.count-1-iteration))
-            
-            
-            pass
-        
         return

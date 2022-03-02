@@ -48,9 +48,6 @@ def test_NTSequenceToAASequence():
 def test_NTSequenceTo6AASequences():
     pass
 
-def test_NTSequenceTo6AASequences():
-    pass
-
 def test_pairwiseAlignmentGlobal():
     matrix = Score(1, -1, 0, -2)
     alignment = PairwiseAlignment("GTCGACGCA", "GATTACA", matrix)
@@ -61,7 +58,7 @@ def test_pairwiseAlignmentGlobal():
     print("test_pairwiseAlignmentGlobal: Clear")
 
 def test_parserFasta():
-    filename = "test.fasta"
+    filename = "./Testfiles/test.fasta"
     collection = Parser.Fasta(filename)
     assert collection[0].sequenceName == "A"
     assert collection[1].sequenceName == "B"

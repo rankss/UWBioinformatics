@@ -4,7 +4,7 @@ class Parser:
     
     @staticmethod
     def Fasta(filename: str):
-        with open(filename) as file:
+        with open(filename, 'r') as file:
             lines = [line.strip() for line in file]
         
         sequence = ""
