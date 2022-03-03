@@ -1,7 +1,9 @@
+import numpy as np
 from SequenceAlignment import PairwiseAlignment
 from Sequence import Sequence, AASequence, NTSequence
 from Score import Score
 from Parser import Parser
+from Cluster import Cluster, Tree
  
 def test_SequenceGeneneral():
     NTSeq = Sequence("ACTG")
@@ -39,7 +41,6 @@ def test_NTSequenceFindFRSubsequence():
 def test_NTSequenceToAASequence():
     NTSeq = Sequence("ATGAATTAA")
     AASeqs = NTSeq.ToAASequence()
-    print(AASeqs[0])
     assert AASeqs[0] == AASequence("MN")
     assert AASeqs[1] == AASequence("")
     assert AASeqs[2] == AASequence("EL")
@@ -67,3 +68,34 @@ def test_parserFasta():
     assert collection[1] == Sequence("tgcaccaaacatgtctaaagctggaaccaaaattactttctttgaagacaaaaactttcaaggccgccactatgacagcgattgcgactgtgcagatttccacatgtacctgagccgctg", "B")
     assert collection[2] == Sequence("tgcaccaaacatgtctaaagctggaaccaaaattactttctttgaagacaaaaactttcaaggccgccactatgacagcgattgcgactgtgcagatttccacatgtacctgagccgctg", "C")
     print("test_parserFasta: Clear")
+
+def test_ClusterUPGMA():
+    # data from table 3 of Fitch and Margoliash, Construction of Phylogenetic trees
+    taxa = ["Turtle", "Human", "Tuna", "Chicken", "Moth", "Monkey", "Dog"]
+    distances = np.array(
+        [
+            [0, 19, 27, 8, 33, 18, 13],
+            [19, 0, 31, 18, 36, 1, 13],
+            [27, 31, 0, 26, 41, 32, 29],
+            [8, 18, 26, 0, 31, 17, 14],
+            [33, 36, 41, 31, 0, 35, 28],
+            [18, 1, 32, 17, 35, 0, 12],
+            [13, 13, 29, 14, 28, 12, 0],
+        ]
+    )
+    
+    # data from https://en.wikipedia.org/wiki/UPGMA
+    taxa = ["a", "b", "c", "d", "e"]
+    distances = np.array(
+        [
+            [0, 17, 21, 31, 23],
+            [17, 0, 30, 34, 21],
+            [21, 30, 0, 28, 39],
+            [31, 34, 28, 0, 43],
+            [23, 21, 39, 43, 0]
+        ]
+    )
+    
+    cluster = Cluster(distances, taxa)
+    newick = Tree.Newick(cluster.UPGMA())
+    

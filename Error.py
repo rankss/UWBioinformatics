@@ -1,5 +1,3 @@
-from Logger import Logger
-
 class Error(Exception):
     """[summary]
 
@@ -8,7 +6,6 @@ class Error(Exception):
     """
     def __init__(self, message: str):
         super().__init__()
-        # self.logger = Logger()
         self.message = message
 
     def __str__(self):
@@ -38,6 +35,18 @@ class InvalidSequenceTypeError(Error):
     def __str__(self):
         return f"{self.message}"
 
+class InvalidAlignmentTypeError(Error):
+    """_summary_
+
+    Args:
+        Error (_type_): _description_
+    """
+    def __init__(self, message="Invalid Alignment Type"):
+        super().__init__(message)
+
+    def __str__(self):
+        return f"{self.message}"
+
 class InvalidMatrixError(Error):
     """[summary]
 
@@ -45,18 +54,6 @@ class InvalidMatrixError(Error):
         Error ([type]): [description]
     """
     def __init__(self, message="Invalid Matrix"):
-        super().__init__(message)
-
-    def __str__(self):
-        return f"{self.message}"
-
-class InvalidModelError(Error):
-    """[summary]
-
-    Args:
-        Error ([type]): [description]
-    """
-    def __init__(self, message="Invalid Model"):
         super().__init__(message)
 
     def __str__(self):
