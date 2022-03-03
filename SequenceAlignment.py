@@ -1,8 +1,10 @@
 import numpy as np
+from typing import Literal
 from Sequence import Sequence
 from Score import Score
 from Error import InvalidAlignmentTypeError
-from typing import Literal
+from Cluster import Cluster
+
 
 class PairwiseAlignment:
     """Global/Local Pairwise Alignment
@@ -42,7 +44,7 @@ class PairwiseAlignment:
 
         return
 
-    def __Match(self, temp_path: str): # Match has bug for local alignment
+    def __match(self, temp_path: str): # Match has bug for local alignment
         hMatch, vMatch = "", ""
         hCounter, vCounter = 0, 0
         for direction in temp_path:
@@ -63,7 +65,7 @@ class PairwiseAlignment:
         self.alignments.append(match)
         return
 
-    def __Path(self, temp_path: str, nodes: list, col: int, row: int, alignment: Literal=GLOBAL):
+    def __path(self, temp_path: str, nodes: list, col: int, row: int, alignment: Literal=GLOBAL):
         if alignment == PairwiseAlignment.GLOBAL:
             comparison = col > 0 or row > 0
         if alignment == PairwiseAlignment.LOCAL:
@@ -72,16 +74,16 @@ class PairwiseAlignment:
         if comparison:
             curr = self.direction[row][col]
             for direction in curr:
-                self.__Path(temp_path + direction, nodes + [(col, row)],
+                self.__path(temp_path + direction, nodes + [(col, row)],
                             col + PairwiseAlignment.__DIR_DICT[direction][0],
                             row + PairwiseAlignment.__DIR_DICT[direction][1],
                             alignment)
         else:
-            self.__Match(temp_path[::-1])
+            self.__match(temp_path[::-1])
             self.paths.append(nodes)
         return
         
-    def __Global(self):
+    def __global(self):
         """Performs Needleman-Wunsch for sequence pair with affine gap penalty
         """
         hLen, vLen = len(self.hSeq) + 1, len(self.vSeq) + 1
@@ -131,10 +133,10 @@ class PairwiseAlignment:
         self.optimal = self.dpArray[vLen-1][hLen-1]
         self.alignments = []
         self.paths = []
-        self.__Path("", [], hLen-1, vLen-1, PairwiseAlignment.GLOBAL)
+        self.__path("", [], hLen-1, vLen-1, PairwiseAlignment.GLOBAL)
         return 
 
-    def __Local(self):
+    def __local(self):
         """Performs Smith-Waterman for sequence pair with affine gap penalty
         """
         hLen, vLen = len(self.hSeq) + 1, len(self.vSeq) + 1
@@ -176,20 +178,20 @@ class PairwiseAlignment:
         for row in range(vLen):
             for col in range(hLen):
                 if self.dpArray[row, col] == self.optimal:
-                    self.__Path("", [], col, row, PairwiseAlignment.LOCAL)
+                    self.__path("", [], col, row, PairwiseAlignment.LOCAL)
         return
     
-    def Align(self, alignment: Literal=GLOBAL):
+    def align(self, alignment: Literal=GLOBAL):
         if alignment not in PairwiseAlignment.__VALID_ALIGNMENT_TYPE:
             raise InvalidAlignmentTypeError()
     
         if alignment == PairwiseAlignment.GLOBAL:
-            self.__Global()
+            self.__global()
         if alignment == PairwiseAlignment.LOCAL:
-            self.__Local()
+            self.__local()
         return
     
-    def Info(self):
+    def summary(self):
         pass
     
     @staticmethod
@@ -266,5 +268,10 @@ class MultipleSequenceAlignment:
         self.count = len(self.sequences)
         return
     
-    def ClustalW(self):
+    def clustalw(self):
+        # Produce distance matrix
+        
+        # Produce guide tree
+        
+        # Follow guide tree for alignment
         return

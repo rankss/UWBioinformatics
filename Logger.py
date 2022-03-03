@@ -41,7 +41,7 @@ class Logger:
             self.file.close()
         return
 
-    def Log(self, msg: str):
+    def log(self, msg: str):
         with self.__lock:
             self.file.write(f"{datetime.datetime.now().strftime(r'%Y-%m-%d %H:%M:%S')}: {str(msg)}\n")
             self.file.flush()

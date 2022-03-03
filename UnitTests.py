@@ -19,28 +19,28 @@ def test_SequenceGeneneral():
     
 def test_SequenceFindSubsequence():
     AASeq = Sequence("ATCCTCGTAATC")
-    indices = AASeq.FindSubsequence("TC")
+    indices = AASeq.findSubsequence("TC")
     assert indices == [1, 4, 10]
     print("test_SequenceFindSubsequence: Clear")
 
 def test_NTSequenceComplement():
     NTSeq = Sequence("ATCGCTAG")
-    complementSeq = NTSeq.Complement()
+    complementSeq = NTSeq.complement()
     assert complementSeq.sequence == "CTAGCGAT"
     print("test_NTSequenceComplement: Clear")
     
 def test_NTSequenceFindFRSubsequence():
     NTSeq = Sequence("ATCCTCGTAATCGA")
-    complementSeq = NTSeq.Complement()
+    complementSeq = NTSeq.complement()
     assert complementSeq.sequence == "TCGATTACGAGGAT"
-    frIndices = NTSeq.FindFRSubsequence("TC")
+    frIndices = NTSeq.findFRSubsequence("TC")
     assert frIndices["forward"] == [1, 4, 10]
     assert frIndices["reverse"] == [0]
     print("test_NTSequenceFindFRSubsequence: Clear")
     
 def test_NTSequenceToAASequence():
     NTSeq = Sequence("ATGAATTAA")
-    AASeqs = NTSeq.ToAASequence()
+    AASeqs = NTSeq.toAASequence()
     assert AASeqs[0] == AASequence("MN")
     assert AASeqs[1] == AASequence("")
     assert AASeqs[2] == AASequence("EL")
@@ -49,24 +49,24 @@ def test_NTSequenceToAASequence():
 def test_NTSequenceTo6AASequences():
     pass
 
-def test_pairwiseAlignmentGlobal():
+def test_PairwiseAlignmentGlobal():
     matrix = Score(1, -1, 0, -2)
     alignment = PairwiseAlignment("GTCGACGCA", "GATTACA", matrix)
-    alignment.Align(PairwiseAlignment.GLOBAL)
+    alignment.align(PairwiseAlignment.GLOBAL)
     assert alignment.optimal == -3
     assert len(alignment.alignments) == 2
     assert (alignment.dpArray[6] == [-12, -9, -6, -3, -4, -3, 0, -2, -4, -6]).all()
     print("test_pairwiseAlignmentGlobal: Clear")
 
-def test_parserFasta():
+def test_ParserFasta():
     filename = "./Testfiles/test.fasta"
     collection = Parser.Fasta(filename)
     assert collection[0].sequenceName == "A"
     assert collection[1].sequenceName == "B"
     assert collection[2].sequenceName == "C"
-    assert collection[0] == Sequence("tgcaccaaacatgtctaaagctggaaccaaaattactttctttgaagacaaaaactttcaaggccgccactatgacagcgattgcgactgtgcagatttccacatgtacctgagccgctg", "A")
-    assert collection[1] == Sequence("tgcaccaaacatgtctaaagctggaaccaaaattactttctttgaagacaaaaactttcaaggccgccactatgacagcgattgcgactgtgcagatttccacatgtacctgagccgctg", "B")
-    assert collection[2] == Sequence("tgcaccaaacatgtctaaagctggaaccaaaattactttctttgaagacaaaaactttcaaggccgccactatgacagcgattgcgactgtgcagatttccacatgtacctgagccgctg", "C")
+    assert collection[0].sequence == "agcaccaaacatgtctaaagctggaaccaaaattactttctttgaagacaaaaactttcaaggccgccactatgacagcgattgcgactgtgcagatttccacatgtacctgagccgctg".upper()
+    assert collection[1].sequence == "tgcaccaaacatgtctaaagctggaaccaaaattactttctttgaagacaaaaactttcaaggccgccactatgacagcgattgcgactgtgcagatttccacatgtacctgagccgctg".upper()
+    assert collection[2].sequence == "cgcaccaaacatgtctaaagctggaaccaaaattactttctttgaagacaaaaactttcaaggccgccactatgacagcgattgcgactgtgcagatttccacatgtacctgagccgctg".upper()
     print("test_parserFasta: Clear")
 
 def test_ClusterUPGMA():
@@ -85,17 +85,17 @@ def test_ClusterUPGMA():
     )
     
     # data from https://en.wikipedia.org/wiki/UPGMA
-    taxa = ["a", "b", "c", "d", "e"]
-    distances = np.array(
-        [
-            [0, 17, 21, 31, 23],
-            [17, 0, 30, 34, 21],
-            [21, 30, 0, 28, 39],
-            [31, 34, 28, 0, 43],
-            [23, 21, 39, 43, 0]
-        ]
-    )
+    # taxa = ["a", "b", "c", "d", "e"]
+    # distances = np.array(
+    #     [
+    #         [0, 17, 21, 31, 23],
+    #         [17, 0, 30, 34, 21],
+    #         [21, 30, 0, 28, 39],
+    #         [31, 34, 28, 0, 43],
+    #         [23, 21, 39, 43, 0]
+    #     ]
+    # )
     
     cluster = Cluster(distances, taxa)
-    newick = Tree.Newick(cluster.UPGMA())
-    
+    newick = Tree.Newick(cluster.upgma())
+    print(newick)

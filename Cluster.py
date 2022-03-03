@@ -2,7 +2,7 @@ import numpy as np
 from itertools import product
 
 class Node:
-    def __init__(self, taxa, distance: float=0.0):
+    def __init__(self, taxa: str=None, distance: float=0.0):
         self.taxa = taxa
         self.distance = distance
         if type(self.taxa) is str:
@@ -10,7 +10,7 @@ class Node:
         else:
             self.isLeaf = False
             
-    def __len__(self):
+    def __len__(self) -> int:
         if self.isLeaf:
             return 1
         length = 0
@@ -18,30 +18,30 @@ class Node:
             length += len(leaf)
         return length
     
-    def Children(self) -> list:
-        if self.isLeaf:
-            return [self]
-        return self.taxa
-    
-    def Distance(self):
-        if self.isLeaf:
-            return self.distance
-        return self.distance + max([node.Distance() for node in self.taxa])
-    
     def updateDistance(self, distance: float):
         if self.isLeaf:
             self.distance = distance
         else:
-            self.distance = distance - max([node.Distance() for node in self.taxa])
+            self.distance = distance - max([node.totalDistance() for node in self.taxa])
         return
-
+    
+    def children(self) -> list:
+        if self.isLeaf:
+            return [self]
+        return self.taxa
+    
+    def totalDistance(self) -> float:
+        if self.isLeaf:
+            return self.distance
+        return self.distance + max([node.totalDistance() for node in self.taxa])
+    
 class Tree:
     @staticmethod
     def Equal(node1: Node, node2: Node):
         pass
     
     @staticmethod
-    def Newick(root: Node):
+    def Newick(root: Node) -> str:
         if root.isLeaf:
             return f"{root.taxa}:{root.distance}"
         else:
@@ -53,7 +53,7 @@ class Cluster:
         np.fill_diagonal(self.distMatrix, np.inf)
         self.taxa = taxa
         
-    def UPGMA(self, reverse=False) -> Node: 
+    def upgma(self) -> Node: 
         # https://codereview.stackexchange.com/questions/263416/upgma-tree-building-in-python with a few modifications
         distMatrix = self.distMatrix
         nodes = [Node(taxon) for taxon in self.taxa] # list of initialized nodes
@@ -81,7 +81,7 @@ class Cluster:
                 rowChild = [rowNode] # we actually only want the rowNode itself here
                 for colNode in nodes[i+1:]:
                     newColIndex = newNodeToIndex[colNode]
-                    colChild = colNode.Children() if colNode == mergeNode else [colNode] # if node is mergeNode, we want its children for arithmetic mean
+                    colChild = colNode.children() if colNode == mergeNode else [colNode] # if node is mergeNode, we want its children for arithmetic mean
                     nodeProduct = list(product(rowChild, colChild)) # cartesian product of two lists
 
                     # Black magic calculation
@@ -95,4 +95,7 @@ class Cluster:
             indexToNode = newIndexToNode
         
         return nodes[0]
+    
+    def neighborJoining(self) -> Node:
+        pass
         

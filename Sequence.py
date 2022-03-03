@@ -44,12 +44,12 @@ class Sequence:
         self.sequenceType = sequenceType
         self.summary = {}
         
-        self.__Clean()
+        self.__clean()
         if self.sequenceType is None:
-            self.__AutoDetectSequenceType()
-        self.__Validate()
+            self.__autoDetectSequenceType()
+        self.__validate()
         if type(self) is Sequence:
-            self.__Transform()
+            self.__transform()
         return
 
     def __str__(self):
@@ -67,15 +67,15 @@ class Sequence:
         sameType = self.sequenceType == other.sequenceType
         return sameSequence and sameName and sameType
 
-    def __Clean(self):
+    def __clean(self):
         self.sequence = self.sequence.strip().upper()
         return
     
-    def __Validate(self):
+    def __validate(self):
         if self.sequenceType not in [Sequence.NUCLEOTIDES, Sequence.AMINO_ACIDS]:
             raise InvalidSequenceTypeError("Sequence type is not valid.")
     
-    def __Transform(self):
+    def __transform(self):
         if self.sequenceType == Sequence.NUCLEOTIDES:
             self.__class__ = NTSequence
             return
@@ -84,7 +84,7 @@ class Sequence:
             return
         return
     
-    def __AutoDetectSequenceType(self):
+    def __autoDetectSequenceType(self):
         monomers = set(self.sequence)
         if monomers.issubset(set(Sequence.NUCLEOTIDES)):
             self.sequenceType = Sequence.NUCLEOTIDES
@@ -94,7 +94,7 @@ class Sequence:
             return
         raise InvalidSequenceError("Sequence is neither a protein nor DNA.")
             
-    def FindSubsequence(self, subsequence: str, overlapping=True):
+    def findSubsequence(self, subsequence: str, overlapping=True):
         """Find all occurrences of subsequences in forward strand.
 
         Args:
@@ -116,11 +116,9 @@ class Sequence:
                                        index + (1 if overlapping else len(subsequence)))
         return indices
     
-    def Length(self):
+    def summary(self):
         self.summary["length"] = len(self.sequence)
-        return
-    
-    def Frequency(self):
+        
         self.summary["frequency"] = {monomer:0 for monomer in self.sequenceType}
         for monomer in self.sequence:
             self.summary["frequency"][monomer] += 1
@@ -131,7 +129,7 @@ class AASequence(Sequence):
     def __init__(self, sequence: str, sequenceName: str=None, sequenceType: Literal=Sequence.AMINO_ACIDS):
         super().__init__(sequence, sequenceName, sequenceType)
     
-    def ToDNASequence(self):
+    def toDNASequence(self):
         return
         
 class NTSequence(Sequence):
@@ -139,7 +137,7 @@ class NTSequence(Sequence):
     def __init__(self, sequence: str, sequenceName: str=None, sequenceType=Sequence.NUCLEOTIDES):
         super().__init__(sequence, sequenceName, sequenceType)
     
-    def Complement(self):
+    def complement(self):
         """Computes the reverse complement of a sequence.
 
         Returns:
@@ -151,7 +149,7 @@ class NTSequence(Sequence):
             
         return NTSequence(complement[::-1])
     
-    def FindFRSubsequence(self, subsequence: str, overlapping=True):
+    def findFRSubsequence(self, subsequence: str, overlapping=True):
         """Finds all occurrences of subsequence in forward and reverse strand
 
         Args:
@@ -162,13 +160,13 @@ class NTSequence(Sequence):
             _type_: _description_
         """
         indices = {
-            "forward": self.FindSubsequence(subsequence, overlapping), 
-            "reverse": self.Complement().FindSubsequence(subsequence, overlapping)
+            "forward": self.findSubsequence(subsequence, overlapping), 
+            "reverse": self.complement().findSubsequence(subsequence, overlapping)
         }
         
         return indices
     
-    def ToAASequence(self):
+    def toAASequence(self):
         AASequences = []
         for i in range(3):
             translatedSequence = ""
@@ -182,13 +180,13 @@ class NTSequence(Sequence):
             AASequences.append(AASequence(translatedSequence))
         return AASequences
     
-    def To6AASequences(self):
+    def to6AASequences(self):
         """_summary_
         """
-        reverseSequence = self.Complement()
+        reverseSequence = self.complement()
         AASequences = {
-            "forward": self.ToAASequence(),
-            "reverse": reverseSequence.ToAASequence()
+            "forward": self.toAASequence(),
+            "reverse": reverseSequence.toAASequence()
         }
         
         return AASequences
