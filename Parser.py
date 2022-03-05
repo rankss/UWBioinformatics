@@ -8,17 +8,17 @@ class Parser:
             lines = [line.strip() for line in file]
         
         sequence = ""
-        sequenceName = ""
+        taxa = ""
         sequenceCollection = []
         for line in lines:
             if line[0] == '>':
                 if len(sequence):
-                    sequenceCollection.append(Sequence(sequence, sequenceName))
+                    sequenceCollection.append(Sequence(sequence, taxa))
                     sequence = ""
-                sequenceName = line[1:]
+                taxa = line[1:]
             else:
                 sequence += line
-        sequenceCollection.append(Sequence(sequence, sequenceName))
+        sequenceCollection.append(Sequence(sequence, taxa))
         
         return sequenceCollection
     

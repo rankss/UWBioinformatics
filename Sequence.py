@@ -38,9 +38,9 @@ class Sequence:
         "TAA": "_", "TAG": "_", "TGA": "_"
     }
     
-    def __init__(self, sequence: str, sequenceName: str=None, sequenceType: Literal=None):
+    def __init__(self, sequence: str, taxa: str, sequenceType: Literal=None):
         self.sequence = sequence
-        self.sequenceName = sequenceName
+        self.taxa = taxa
         self.sequenceType = sequenceType
         self.summary = {}
         
@@ -63,7 +63,7 @@ class Sequence:
     
     def __eq__(self, other):
         sameSequence = self.sequence == other.sequence
-        sameName = self.sequenceName == other.sequenceName
+        sameName = self.taxa == other.taxa
         sameType = self.sequenceType == other.sequenceType
         return sameSequence and sameName and sameType
 
@@ -126,16 +126,16 @@ class Sequence:
         
 class AASequence(Sequence):
     
-    def __init__(self, sequence: str, sequenceName: str=None, sequenceType: Literal=Sequence.AMINO_ACIDS):
-        super().__init__(sequence, sequenceName, sequenceType)
+    def __init__(self, sequence: str, taxa: str, sequenceType: Literal=Sequence.AMINO_ACIDS):
+        super().__init__(sequence, taxa, sequenceType)
     
     def toDNASequence(self):
         return
         
 class NTSequence(Sequence):
     
-    def __init__(self, sequence: str, sequenceName: str=None, sequenceType=Sequence.NUCLEOTIDES):
-        super().__init__(sequence, sequenceName, sequenceType)
+    def __init__(self, sequence: str, taxa: str, sequenceType=Sequence.NUCLEOTIDES):
+        super().__init__(sequence, taxa, sequenceType)
     
     def complement(self):
         """Computes the reverse complement of a sequence.
@@ -147,7 +147,7 @@ class NTSequence(Sequence):
         for monomer in self.sequence:
             complement += Sequence.COMPLEMENT[monomer]
             
-        return NTSequence(complement[::-1])
+        return NTSequence(complement[::-1], f"{self.taxa}_complement")
     
     def findFRSubsequence(self, subsequence: str, overlapping=True):
         """Finds all occurrences of subsequence in forward and reverse strand
@@ -166,7 +166,7 @@ class NTSequence(Sequence):
         
         return indices
     
-    def toAASequence(self):
+    def to3AASequences(self):
         AASequences = []
         for i in range(3):
             translatedSequence = ""
@@ -177,10 +177,10 @@ class NTSequence(Sequence):
                 if Sequence.CODON_DICT[codon] == "_":
                     break
                 translatedSequence += Sequence.CODON_DICT[codon]
-            AASequences.append(AASequence(translatedSequence))
+            AASequences.append(AASequence(translatedSequence, f"{self.taxa}_translated{i+1}"))
         return AASequences
     
-    def to6AASequences(self):
+    def toFR3AASequences(self):
         """_summary_
         """
         reverseSequence = self.complement()

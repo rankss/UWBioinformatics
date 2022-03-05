@@ -1,12 +1,12 @@
 import numpy as np
-from typing import Literal
+from typing import Literal, Callable
 from Sequence import Sequence
 from Score import Score
 from Error import InvalidAlignmentTypeError
 from Cluster import Cluster
 
 
-class PairwiseAlignment:
+class PWA:
     """Global/Local Pairwise Alignment
 
     Attributes:
@@ -32,10 +32,10 @@ class PairwiseAlignment:
         "D": [-1, -1] # Diagonal
     }
     
-    def __init__(self, sequence1: str, sequence2: str, score: Score):
+    def __init__(self, hSeq: Sequence, vSeq: Sequence, score: Score):
         self.score = score
-        self.hSeq = Sequence(sequence1)
-        self.vSeq = Sequence(sequence2)
+        self.hSeq = hSeq
+        self.vSeq = vSeq
         self.dpArray = None
         self.direction = None
         self.paths = None
@@ -66,17 +66,17 @@ class PairwiseAlignment:
         return
 
     def __path(self, temp_path: str, nodes: list, col: int, row: int, alignment: Literal=GLOBAL):
-        if alignment == PairwiseAlignment.GLOBAL:
+        if alignment == PWA.GLOBAL:
             comparison = col > 0 or row > 0
-        if alignment == PairwiseAlignment.LOCAL:
+        if alignment == PWA.LOCAL:
             comparison = self.dpArray[row, col] != 0
             
         if comparison:
             curr = self.direction[row][col]
             for direction in curr:
                 self.__path(temp_path + direction, nodes + [(col, row)],
-                            col + PairwiseAlignment.__DIR_DICT[direction][0],
-                            row + PairwiseAlignment.__DIR_DICT[direction][1],
+                            col + PWA.__DIR_DICT[direction][0],
+                            row + PWA.__DIR_DICT[direction][1],
                             alignment)
         else:
             self.__match(temp_path[::-1])
@@ -133,7 +133,7 @@ class PairwiseAlignment:
         self.optimal = self.dpArray[vLen-1][hLen-1]
         self.alignments = []
         self.paths = []
-        self.__path("", [], hLen-1, vLen-1, PairwiseAlignment.GLOBAL)
+        self.__path("", [], hLen-1, vLen-1, PWA.GLOBAL)
         return 
 
     def __local(self):
@@ -178,16 +178,16 @@ class PairwiseAlignment:
         for row in range(vLen):
             for col in range(hLen):
                 if self.dpArray[row, col] == self.optimal:
-                    self.__path("", [], col, row, PairwiseAlignment.LOCAL)
+                    self.__path("", [], col, row, PWA.LOCAL)
         return
     
     def align(self, alignment: Literal=GLOBAL):
-        if alignment not in PairwiseAlignment.__VALID_ALIGNMENT_TYPE:
+        if alignment not in PWA.__VALID_ALIGNMENT_TYPE:
             raise InvalidAlignmentTypeError()
     
-        if alignment == PairwiseAlignment.GLOBAL:
+        if alignment == PWA.GLOBAL:
             self.__global()
-        if alignment == PairwiseAlignment.LOCAL:
+        if alignment == PWA.LOCAL:
             self.__local()
         return
     
@@ -195,14 +195,14 @@ class PairwiseAlignment:
         pass
     
     @staticmethod
-    def Global(hSeq: str, vSeq: str, score: Score) -> float:
-        hSeq, vSeq = Sequence(hSeq), Sequence(vSeq)
+    def Global(hSeq: Sequence, vSeq: Sequence, score: Score):
         hLen, vLen = len(hSeq) + 1, len(vSeq) + 1
         exist, extend = score.existence, score.extension
         matrix = score.matrix
         
         # Define recurrence matrices
         dpArray = np.zeros((vLen, hLen))
+        direction = [["" for i in range(hLen)] for j in range(vLen)]
         vGap = np.full((vLen, hLen + 1), -np.inf)
         hGap = np.full((vLen, hLen + 1), -np.inf)
         match = np.full((vLen, hLen + 1), -np.inf)
@@ -210,10 +210,12 @@ class PairwiseAlignment:
         for col in range(1, hLen):
             vGap[0, col] = exist + col*extend
             dpArray[0, col] = exist + col*extend
+            direction[0][col] += "L"
 
         for row in range(1, vLen):
             hGap[row, 0] = exist + row*extend
             dpArray[row, 0] = exist + row*extend
+            direction[row][0] += "U"
 
         # Affine gap penalty recurrence relation
         for row in range(1, vLen):
@@ -228,17 +230,29 @@ class PairwiseAlignment:
                 
                 dpArray[row, col] = max(hGap[row, col], vGap[row, col], match[row, col])
                 
-        return dpArray[vLen-1][hLen-1]
+                if dpArray[row, col] == hGap[row, col]:
+                    direction[row][col] += "L"
+                if dpArray[row, col] == vGap[row, col]:
+                    direction[row][col] += "U"
+                if dpArray[row, col] == match[row, col]:
+                    direction[row][col] += "D"
+
+        optimal = dpArray[vLen-1][hLen-1]
+        alignments = []
+        paths = []
+        PWA.__path("", [], hLen-1, vLen-1, PWA.GLOBAL)
+        
+        return
 
     @staticmethod
-    def Local(hSeq: str, vSeq: str, score: Score) -> float:
-        hSeq, vSeq = Sequence(hSeq), Sequence(vSeq)
+    def Local(hSeq: Sequence, vSeq: Sequence, score: Score) -> float:
         hLen, vLen = len(hSeq) + 1, len(vSeq) + 1
         exist, extend = score.existence, score.extension
         matrix = score.matrix
         
         # Define recurrence matrices
         dpArray = np.zeros((vLen, hLen))
+        direction = [["" for i in range(hLen)] for j in range(vLen)]
         vGap = np.zeros((vLen, hLen + 1))
         hGap = np.zeros((vLen, hLen + 1))
         match = np.zeros((vLen, hLen + 1))
@@ -247,19 +261,37 @@ class PairwiseAlignment:
         for row in range(1, vLen):
             for col in range(1, hLen):
                 hGap[row, col] = max(0, hGap[row, col-1] + extend,
-                                 dpArray[row, col-1] + exist + extend)
+                                     dpArray[row, col-1] + exist + extend)
                 
                 vGap[row, col] = max(0, vGap[row-1, col] + extend,
-                                 dpArray[row-1, col] + exist + extend)
+                                     dpArray[row-1, col] + exist + extend)
                 
                 match[row, col] = dpArray[row-1, col-1] + matrix[vSeq[row-1]][hSeq[col-1]]
                 
                 dpArray[row, col] = max(0, hGap[row, col], vGap[row, col], match[row, col])
                 
+                if dpArray[row, col] == hGap[row, col]:
+                    direction[row][col] += "L"
+                if dpArray[row, col] == vGap[row, col]:
+                    direction[row][col] += "U"
+                if dpArray[row, col] == match[row, col]:
+                    direction[row][col] += "D"
+        
+        alignments = []
+        paths = []
+        optimal = np.max(dpArray)
+        for row in range(vLen):
+            for col in range(hLen):
+                if dpArray[row, col] == optimal:
+                    PWA.__path("", [], col, row, PWA.LOCAL)
+                
         return np.max(dpArray)
         
-    
-class MultipleSequenceAlignment:
+    @staticmethod
+    def Similarity(hSeq: Sequence, vSeq: Sequence) -> float:
+        pass
+        
+class MSA:
     """[summary]
     """
     def __init__(self, sequences: list, score: Score):
@@ -268,10 +300,19 @@ class MultipleSequenceAlignment:
         self.count = len(self.sequences)
         return
     
-    def clustalw(self):
+    def clustalw(self, distFunc: Callable):
         # Produce distance matrix
+        distMatrix = np.zeros((self.count, self.count))
+        for row, vSeq in enumerate(self.sequences[:-1]):
+            for col, hSeq in enumerate(self.sequences[row+1:], row+1):
+                distance = PWA.Global(hSeq, vSeq, self.score)
+                distMatrix[row, col] = -abs(distance)
+                distMatrix[col, row] = -abs(distance)
+        distMatrix += distMatrix.min()
         
         # Produce guide tree
+        cluster = Cluster(distMatrix, [sequence.taxa for sequence in self.sequences])
+        root = cluster.upgma()
         
         # Follow guide tree for alignment
         return
