@@ -34,16 +34,6 @@ class Node:
         if self.isLeaf:
             return self.distance
         return self.distance + max([node.totalDistance() for node in self.taxa])
-    
-    def toNewick(self):
-        if self.isLeaf:
-            return f"{self.taxa}:{self.distance}"
-        else:
-            return f"({','.join([node.toNewick() for node in self.taxa])}):{self.distance}"
-    
-    @staticmethod
-    def newickToNode(newick: str):
-        pass
 
 class Cluster:
     def __init__(self, distMatrix: np.ndarray, taxa: list):
@@ -99,13 +89,52 @@ class Cluster:
 
 class Newick:
     @staticmethod
-    def toNewick(root: Node):
+    def ToNewick(root: Node):
         if root.isLeaf:
             return f"{root.taxa}:{root.distance}"
         else:
-            return f"({','.join([Newick.toNewick(node) for node in root.taxa])}):{root.distance}"
+            return f"({','.join([Newick.ToNewick(node) for node in root.taxa])}):{root.distance}"
     
     @staticmethod
-    def toTree(newick: str):
-        pass
+    def ToTree(newick: str) -> Node:
+        def findComma(newick: str) -> list:
+            """Finds all comma indices between first and last bracket appended with -1.
+
+            Args:
+                newick (str): (xxx, (xxx, xxx))
+
+            Returns:
+                list: (xxx, (xxx, xxx)) -> [4, -1]
+            """
+            bracketCount = 0
+            commaList = []
+            for i, ch in enumerate(newick):
+                if ch == '(':
+                    bracketCount += 1
+                if ch == ')':
+                    bracketCount -= 1
+                if ch == ',' and bracketCount == 1:
+                    commaList.append(i)
+            commaList.append(-1)
+            return commaList
+
+        colonIndex = newick.rfind(':')
+        distance = float(newick[colonIndex+1:])
+        newick = newick[:colonIndex]
+        if newick[0] != '(':
+            return Node(newick, distance)
         
+        commaList = findComma(newick[:colonIndex])
+        newickList = []
+        initial = 1
+        for commaIndex in commaList:
+            newickList.append(newick[initial:commaIndex])
+            initial = commaIndex+1
+        
+        nodeList = []
+        for newick in newickList:
+            nodeList.append(Newick.ToTree(newick))
+
+        return Node(nodeList, distance)
+    
+    

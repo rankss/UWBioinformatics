@@ -85,18 +85,21 @@ def test_ClusterUPGMA():
     )
     
     # data from https://en.wikipedia.org/wiki/UPGMA
-    taxa = ["a", "b", "c", "d", "e"]
-    distances = np.array(
-        [
-            [0, 17, 21, 31, 23],
-            [17, 0, 30, 34, 21],
-            [21, 30, 0, 28, 39],
-            [31, 34, 28, 0, 43],
-            [23, 21, 39, 43, 0]
-        ]
-    )
+    # taxa = ["a", "b", "c", "d", "e"]
+    # distances = np.array(
+    #     [
+    #         [0, 17, 21, 31, 23],
+    #         [17, 0, 30, 34, 21],
+    #         [21, 30, 0, 28, 39],
+    #         [31, 34, 28, 0, 43],
+    #         [23, 21, 39, 43, 0]
+    #     ]
+    # )
     
     cluster = Cluster(distances, taxa)
     root = cluster.upgma()
-    newick = Newick.toNewick(root)
+    newick = Newick.ToNewick(root)
+    root2 = Newick.ToTree("(Moth:17.0,(Tuna:14.5,((Turtle:4.0,Chicken:4.0):4.25,(Dog:6.25,(Human:0.5,Monkey:0.5):5.75):2.0):6.25):2.5):0.0")
+    newick2 = Newick.ToNewick(root2)
     print(newick)
+    print(newick2)
