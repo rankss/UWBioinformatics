@@ -35,17 +35,15 @@ class Node:
             return self.distance
         return self.distance + max([node.totalDistance() for node in self.taxa])
     
-class Tree:
-    @staticmethod
-    def Equal(node1: Node, node2: Node):
-        pass
+    def toNewick(self):
+        if self.isLeaf:
+            return f"{self.taxa}:{self.distance}"
+        else:
+            return f"({','.join([node.toNewick() for node in self.taxa])}):{self.distance}"
     
     @staticmethod
-    def Newick(root: Node) -> str:
-        if root.isLeaf:
-            return f"{root.taxa}:{root.distance}"
-        else:
-            return f"({','.join([Tree.Newick(node) for node in root.taxa])}):{root.distance}"
+    def newickToNode(newick: str):
+        pass
 
 class Cluster:
     def __init__(self, distMatrix: np.ndarray, taxa: list):
@@ -97,5 +95,17 @@ class Cluster:
         return nodes[0]
     
     def neighborJoining(self) -> Node:
+        pass
+
+class Newick:
+    @staticmethod
+    def toNewick(root: Node):
+        if root.isLeaf:
+            return f"{root.taxa}:{root.distance}"
+        else:
+            return f"({','.join([Newick.toNewick(node) for node in root.taxa])}):{root.distance}"
+    
+    @staticmethod
+    def toTree(newick: str):
         pass
         

@@ -3,7 +3,7 @@ from SequenceAlignment import PWA
 from Sequence import Sequence, AASequence, NTSequence
 from Score import Score
 from Parser import Parser
-from Cluster import Cluster, Tree
+from Cluster import Cluster, Newick
  
 def test_SequenceGeneneral():
     NTSeq = Sequence("ACTG", "A")
@@ -85,17 +85,18 @@ def test_ClusterUPGMA():
     )
     
     # data from https://en.wikipedia.org/wiki/UPGMA
-    # taxa = ["a", "b", "c", "d", "e"]
-    # distances = np.array(
-    #     [
-    #         [0, 17, 21, 31, 23],
-    #         [17, 0, 30, 34, 21],
-    #         [21, 30, 0, 28, 39],
-    #         [31, 34, 28, 0, 43],
-    #         [23, 21, 39, 43, 0]
-    #     ]
-    # )
+    taxa = ["a", "b", "c", "d", "e"]
+    distances = np.array(
+        [
+            [0, 17, 21, 31, 23],
+            [17, 0, 30, 34, 21],
+            [21, 30, 0, 28, 39],
+            [31, 34, 28, 0, 43],
+            [23, 21, 39, 43, 0]
+        ]
+    )
     
     cluster = Cluster(distances, taxa)
-    newick = Tree.Newick(cluster.upgma())
+    root = cluster.upgma()
+    newick = Newick.toNewick(root)
     print(newick)

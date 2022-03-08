@@ -290,7 +290,7 @@ class PWA:
     @staticmethod
     def Similarity(hSeq: Sequence, vSeq: Sequence) -> float:
         pass
-        
+
 class MSA:
     """[summary]
     """
