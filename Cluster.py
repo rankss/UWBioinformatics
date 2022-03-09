@@ -2,10 +2,11 @@ import numpy as np
 from itertools import product
 
 class Node:
-    def __init__(self, taxa: str=None, distance: float=0.0):
-        self.taxa = taxa
+    def __init__(self, taxon: str=None, children: tuple=(), distance: float=0.0):
+        self.taxon = taxon
+        self.children = children
         self.distance = distance
-        if type(self.taxa) is str:
+        if self.taxon is not None:
             self.isLeaf = True
         else:
             self.isLeaf = False
@@ -14,26 +15,42 @@ class Node:
         if self.isLeaf:
             return 1
         length = 0
-        for leaf in self.taxa:
-            length += len(leaf)
+        for node in self.children:
+            length += len(node)
         return length
     
-    def updateDistance(self, distance: float):
+    def __eq__(self, other) -> bool:
+        if self.isLeaf and other.isLeaf:
+            return self.taxon == other.taxon and self.distance == other.distance
+        else:
+            print(hash(tuple(set(self.children))) == hash(tuple(set(other.children))))
+            return hash(tuple(set(self.children))) == hash(tuple(set(other.children))) and self.distance == other.distance
+        
+    def __hash__(self) -> int: # DO NOT HASH SOMETHING THAT IS MUTABLE
+        return hash((self.taxon, self.children))
+    
+    def __repr__(self) -> str:
+        return "-".join(self.leaves())
+    
+    def setDistance(self, distance: float):
         if self.isLeaf:
             self.distance = distance
         else:
-            self.distance = distance - max([node.totalDistance() for node in self.taxa])
+            self.distance = distance - max([node.totalDistance() for node in self.children])
         return
     
-    def children(self) -> list:
+    def leaves(self) -> list:
         if self.isLeaf:
-            return [self]
-        return self.taxa
+            return [self.taxon]
+        leaves = []
+        for node in self.children:
+            leaves += node.leaves()
+        return leaves
     
     def totalDistance(self) -> float:
         if self.isLeaf:
             return self.distance
-        return self.distance + max([node.totalDistance() for node in self.taxa])
+        return self.distance + max([node.totalDistance() for node in self.children])
 
 class Cluster:
     def __init__(self, distMatrix: np.ndarray, taxa: list):
@@ -41,27 +58,31 @@ class Cluster:
         np.fill_diagonal(self.distMatrix, np.inf)
         self.taxa = taxa
         
-    def upgma(self) -> Node: 
-        # https://codereview.stackexchange.com/questions/263416/upgma-tree-building-in-python with a few modifications
+    def upgma(self) -> Node:
+        # https://codereview.stackexchange.com/questions/263416/upgma-tree-building-in-python with a modifications
         distMatrix = self.distMatrix
-        nodes = [Node(taxon) for taxon in self.taxa] # list of initialized nodes
-        nodeToIndex = {node:i for i, node in enumerate(nodes)} # define maps node -> index
-        indexToNode = {i:node for i, node in enumerate(nodes)} # define maps index -> node
+        # Initialize list of node and maps of nodes <-> index
+        nodes = [Node(taxon=taxon) for taxon in self.taxa]
+        nodeToIndex = {node:i for i, node in enumerate(nodes)}
+        indexToNode = {i:node for i, node in enumerate(nodes)}
         
         iterations = len(self.taxa)
         for i in range(1, iterations): # UPGMA always run for n - 1 iterations, where n = length of taxa
-            index = np.unravel_index(distMatrix.argmin(), distMatrix.shape) # finds min index of ndarray
-            value = distMatrix[index[0], index[1]] # obtains minimum value
-            rowNode, colNode = indexToNode[index[0]], indexToNode[index[1]] # obtain nodes from indices
-            rowNode.updateDistance(value/2), colNode.updateDistance(value/2)
-                        
-            mergeNode = Node([rowNode, colNode]) # merge rowNode and colNode
-            nodes.remove(rowNode), nodes.remove(colNode) # remove rowNode and colNode
-            nodes.append(mergeNode) # append mergeNode to list of nodes
+            # Find min of distMatrix and obtain their corresponding nodes and assign distance
+            index = np.unravel_index(distMatrix.argmin(), distMatrix.shape)
+            value = distMatrix[index[0], index[1]]
+            rowNode, colNode = indexToNode[index[0]], indexToNode[index[1]]
+            rowNode.setDistance(value/2), colNode.setDistance(value/2)
             
-            newMatrix = np.full((iterations-i, iterations-i), np.inf) # define new distMatrix of infinity
-            newNodeToIndex = {node:i for i, node in enumerate(nodes)} # define new map node -> index
-            newIndexToNode = {i:node for i, node in enumerate(nodes)} # define new map index -> node
+            # Merge row/col Nodes into new node, remove them and append merged node
+            mergeNode = Node(children=(rowNode, colNode))
+            nodes.remove(rowNode), nodes.remove(colNode)
+            nodes.append(mergeNode)
+            
+            # Reinitialize list of node and maps of nodes <-> index
+            newMatrix = np.full((iterations-i, iterations-i), np.inf)
+            newNodeToIndex = {node:i for i, node in enumerate(nodes)}
+            newIndexToNode = {i:node for i, node in enumerate(nodes)}
             
             # Loop in upper triangle fashion, lower triangle can be filled by swapping indices
             for i, rowNode in enumerate(nodes[:-1]):
@@ -69,9 +90,9 @@ class Cluster:
                 rowChild = [rowNode] # we actually only want the rowNode itself here
                 for colNode in nodes[i+1:]:
                     newColIndex = newNodeToIndex[colNode]
-                    colChild = colNode.children() if colNode == mergeNode else [colNode] # if node is mergeNode, we want its children for arithmetic mean
+                    colChild = list(colNode.children) if colNode == mergeNode else [colNode] # if node is mergeNode, we want its children for arithmetic mean
                     nodeProduct = list(product(rowChild, colChild)) # cartesian product of two lists
-
+                    
                     # Black magic calculation
                     result = np.array([[distMatrix[nodeToIndex[rowNode], nodeToIndex[colNode]]*len(colNode), len(colNode)] for rowNode, colNode in nodeProduct])
                     newMatrix[newRowIndex, newColIndex] = result[:,0].sum()/result[:,1].sum()
@@ -85,15 +106,16 @@ class Cluster:
         return nodes[0]
     
     def neighborJoining(self) -> Node:
+        # Charlotte TODO
         pass
 
 class Newick:
     @staticmethod
     def ToNewick(root: Node):
         if root.isLeaf:
-            return f"{root.taxa}:{root.distance}"
+            return f"{root.taxon}:{root.distance}"
         else:
-            return f"({','.join([Newick.ToNewick(node) for node in root.taxa])}):{root.distance}"
+            return f"({','.join([Newick.ToNewick(node) for node in root.children])}):{root.distance}"
     
     @staticmethod
     def ToTree(newick: str) -> Node:
@@ -122,7 +144,7 @@ class Newick:
         distance = float(newick[colonIndex+1:])
         newick = newick[:colonIndex]
         if newick[0] != '(':
-            return Node(newick, distance)
+            return Node(taxon=newick, distance=distance)
         
         commaList = findComma(newick[:colonIndex])
         newickList = []
@@ -135,6 +157,17 @@ class Newick:
         for newick in newickList:
             nodeList.append(Newick.ToTree(newick))
 
-        return Node(nodeList, distance)
+        return Node(children=tuple(nodeList), distance=distance)
+    
+    @staticmethod
+    def isSubtree(root1: Node, root2: Node) -> bool:
+        # Ben TODO checks if root2 is a substree of root1
+        
+        pass
+    
+    @staticmethod
+    def Equal(node1: Node, node2: Node):
+        # Ben TODO checks if two tree are equal
+        return node1 == node2
     
     

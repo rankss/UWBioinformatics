@@ -15,19 +15,16 @@ def test_SequenceGeneneral():
     AASeq = Sequence("ACGACG", "C", sequenceType=Sequence.AMINO_ACIDS)
     assert type(AASeq) is AASequence
     assert AASeq.sequenceType == Sequence.AMINO_ACIDS
-    print("test_SequenceGeneneral: Clear")
     
 def test_SequenceFindSubsequence():
     AASeq = Sequence("ATCCTCGTAATC", "A")
     indices = AASeq.findSubsequence("TC")
     assert indices == [1, 4, 10]
-    print("test_SequenceFindSubsequence: Clear")
 
 def test_NTSequenceComplement():
     NTSeq = Sequence("ATCGCTAG", "A")
     complementSeq = NTSeq.complement()
     assert complementSeq.sequence == "CTAGCGAT"
-    print("test_NTSequenceComplement: Clear")
     
 def test_NTSequenceFindFRSubsequence():
     NTSeq = Sequence("ATCCTCGTAATCGA", "A")
@@ -36,7 +33,6 @@ def test_NTSequenceFindFRSubsequence():
     frIndices = NTSeq.findFRSubsequence("TC")
     assert frIndices["forward"] == [1, 4, 10]
     assert frIndices["reverse"] == [0]
-    print("test_NTSequenceFindFRSubsequence: Clear")
     
 def test_NTSequenceTo3AASequences():
     NTSeq = Sequence("ATGAATTAA", "A")
@@ -44,7 +40,6 @@ def test_NTSequenceTo3AASequences():
     assert AASeqs[0] == AASequence("MN", "A_translated1")
     assert AASeqs[1] == AASequence("", "A_translated2")
     assert AASeqs[2] == AASequence("EL", "A_translated3")
-    print("test_NTSequenceToAASequence: Clear")
     
 def test_NTSequenceToFR3AASequences():
     pass
@@ -56,7 +51,6 @@ def test_PWAGlobal():
     assert alignment.optimal == -3
     assert len(alignment.alignments) == 2
     assert (alignment.dpArray[6] == [-12, -9, -6, -3, -4, -3, 0, -2, -4, -6]).all()
-    print("test_pairwiseAlignmentGlobal: Clear")
 
 def test_ParserFasta():
     filename = "./Testfiles/test.fasta"
@@ -67,7 +61,6 @@ def test_ParserFasta():
     assert collection[0].sequence == "agcaccaaacatgtctaaagctggaaccaaaattactttctttgaagacaaaaactttcaaggccgccactatgacagcgattgcgactgtgcagatttccacatgtacctgagccgctg".upper()
     assert collection[1].sequence == "tgcaccaaacatgtctaaagctggaaccaaaattactttctttgaagacaaaaactttcaaggccgccactatgacagcgattgcgactgtgcagatttccacatgtacctgagccgctg".upper()
     assert collection[2].sequence == "cgcaccaaacatgtctaaagctggaaccaaaattactttctttgaagacaaaaactttcaaggccgccactatgacagcgattgcgactgtgcagatttccacatgtacctgagccgctg".upper()
-    print("test_parserFasta: Clear")
 
 def test_ClusterUPGMA():
     # data from table 3 of Fitch and Margoliash, Construction of Phylogenetic trees
@@ -83,23 +76,33 @@ def test_ClusterUPGMA():
             [13, 13, 29, 14, 28, 12, 0],
         ]
     )
-    
-    # data from https://en.wikipedia.org/wiki/UPGMA
-    # taxa = ["a", "b", "c", "d", "e"]
-    # distances = np.array(
-    #     [
-    #         [0, 17, 21, 31, 23],
-    #         [17, 0, 30, 34, 21],
-    #         [21, 30, 0, 28, 39],
-    #         [31, 34, 28, 0, 43],
-    #         [23, 21, 39, 43, 0]
-    #     ]
-    # )
-    
     cluster = Cluster(distances, taxa)
     root = cluster.upgma()
     newick = Newick.ToNewick(root)
     root2 = Newick.ToTree("(Moth:17.0,(Tuna:14.5,((Turtle:4.0,Chicken:4.0):4.25,(Dog:6.25,(Human:0.5,Monkey:0.5):5.75):2.0):6.25):2.5):0.0")
     newick2 = Newick.ToNewick(root2)
-    print(newick)
-    print(newick2)
+    assert newick == newick2
+    
+    # data from https://en.wikipedia.org/wiki/UPGMA
+    taxa = ["a", "b", "c", "d", "e"]
+    distances = np.array(
+        [
+            [0, 17, 21, 31, 23],
+            [17, 0, 30, 34, 21],
+            [21, 30, 0, 28, 39],
+            [31, 34, 28, 0, 43],
+            [23, 21, 39, 43, 0]
+        ]
+    )
+    cluster = Cluster(distances, taxa)
+    root = cluster.upgma()
+    newick = Newick.ToNewick(root)
+    root2 = Newick.ToTree("((e:11.0,(a:8.5,b:8.5):2.5):5.5,(c:14.0,d:14.0):2.5):0.0")
+    newick2 = Newick.ToNewick(root2)
+    assert newick == newick2
+
+def test_NewickEqual():
+    root1 = Newick.ToTree("((e:11.0,(a:8.5,b:8.5):2.5):5.5,(c:14.0,d:14.0):2.5):0.0")
+    root2 = Newick.ToTree("((d:14.0,c:14.0):2.5,((b:8.5,a:8.5):2.5,e:11.0):5.5):0.0")
+    print(root1, root2)
+    print(Newick.Equal(root1, root2))

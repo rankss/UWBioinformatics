@@ -44,7 +44,8 @@ class PWA:
 
         return
 
-    def __match(self, temp_path: str): # Match has bug for local alignment
+    def __match(self, temp_path: str): 
+        # Charlotte TODO Match has bug for local alignment
         hMatch, vMatch = "", ""
         hCounter, vCounter = 0, 0
         for direction in temp_path:
