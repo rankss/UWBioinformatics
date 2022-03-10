@@ -95,14 +95,17 @@ def test_ClusterUPGMA():
         ]
     )
     cluster = Cluster(distances, taxa)
-    root = cluster.upgma()
-    newick = Newick.ToNewick(root)
+    root1 = cluster.upgma()
+    newick1 = Newick.ToNewick(root1)
     root2 = Newick.ToTree("((e:11.0,(a:8.5,b:8.5):2.5):5.5,(c:14.0,d:14.0):2.5):0.0")
     newick2 = Newick.ToNewick(root2)
-    assert newick == newick2
+    assert newick1 == newick2
 
 def test_NewickEqual():
+    root1 = Newick.ToTree("(((((Monkey:0.5,Human:0.5):5.75,Dog:6.25):2.0,(Chicken:4.0,Turtle:4.0):4.25):6.25,Tuna:14.5):2.5,Moth:17.0):0.0")
+    root2 = Newick.ToTree("(Moth:17.0,(Tuna:14.5,((Turtle:4.0,Chicken:4.0):4.25,(Dog:6.25,(Human:0.5,Monkey:0.5):5.75):2.0):6.25):2.5):0.0")
+    assert Newick.Equal(root1, root2) == True
+    
     root1 = Newick.ToTree("((e:11.0,(a:8.5,b:8.5):2.5):5.5,(c:14.0,d:14.0):2.5):0.0")
-    root2 = Newick.ToTree("((d:14.0,c:14.0):2.5,((b:8.5,a:8.5):2.5,e:11.0):5.5):0.0")
-    print(root1, root2)
-    print(Newick.Equal(root1, root2))
+    root2 = Newick.ToTree("((e:10.0,(a:8.5,b:8.5):2.5):5.5,(c:14.0,d:14.0):2.5):0.0")
+    assert Newick.Equal(root1, root2) == False

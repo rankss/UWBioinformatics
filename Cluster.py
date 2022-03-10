@@ -19,12 +19,18 @@ class Node:
             length += len(node)
         return length
     
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other):
+        if self.isLeaf ^ other.isLeaf:
+            return False
         if self.isLeaf and other.isLeaf:
             return self.taxon == other.taxon and self.distance == other.distance
-        else:
-            print(hash(tuple(set(self.children))) == hash(tuple(set(other.children))))
-            return hash(tuple(set(self.children))) == hash(tuple(set(other.children))) and self.distance == other.distance
+
+        flag = {node:False for node in self.children}
+        for (selfChild, otherChild) in product(self.children, other.children):
+            if selfChild == otherChild:
+                flag[selfChild] = flag[selfChild] or True
+                
+        return all(flag.values()) and self.distance == other.distance
         
     def __hash__(self) -> int: # DO NOT HASH SOMETHING THAT IS MUTABLE
         return hash((self.taxon, self.children))
@@ -61,17 +67,15 @@ class Cluster:
     def upgma(self) -> Node:
         # https://codereview.stackexchange.com/questions/263416/upgma-tree-building-in-python with a modifications
         distMatrix = self.distMatrix
-        # Initialize list of node and maps of nodes <-> index
+        # Initialize list of node and maps of nodes -> index
         nodes = [Node(taxon=taxon) for taxon in self.taxa]
         nodeToIndex = {node:i for i, node in enumerate(nodes)}
-        indexToNode = {i:node for i, node in enumerate(nodes)}
         
-        iterations = len(self.taxa)
-        for i in range(1, iterations): # UPGMA always run for n - 1 iterations, where n = length of taxa
+        for i in range(1, len(self.taxa)):
             # Find min of distMatrix and obtain their corresponding nodes and assign distance
             index = np.unravel_index(distMatrix.argmin(), distMatrix.shape)
             value = distMatrix[index[0], index[1]]
-            rowNode, colNode = indexToNode[index[0]], indexToNode[index[1]]
+            rowNode, colNode = nodes[index[0]], nodes[index[1]]
             rowNode.setDistance(value/2), colNode.setDistance(value/2)
             
             # Merge row/col Nodes into new node, remove them and append merged node
@@ -80,28 +84,22 @@ class Cluster:
             nodes.append(mergeNode)
             
             # Reinitialize list of node and maps of nodes <-> index
-            newMatrix = np.full((iterations-i, iterations-i), np.inf)
+            newMatrix = np.full((len(self.taxa)-i, len(self.taxa)-i), np.inf)
             newNodeToIndex = {node:i for i, node in enumerate(nodes)}
-            newIndexToNode = {i:node for i, node in enumerate(nodes)}
             
             # Loop in upper triangle fashion, lower triangle can be filled by swapping indices
             for i, rowNode in enumerate(nodes[:-1]):
-                newRowIndex = newNodeToIndex[rowNode]
-                rowChild = [rowNode] # we actually only want the rowNode itself here
                 for colNode in nodes[i+1:]:
-                    newColIndex = newNodeToIndex[colNode]
-                    colChild = list(colNode.children) if colNode == mergeNode else [colNode] # if node is mergeNode, we want its children for arithmetic mean
-                    nodeProduct = list(product(rowChild, colChild)) # cartesian product of two lists
-                    
+                    nodeProduct = list(product([rowNode], 
+                                               list(colNode.children) if colNode == mergeNode else [colNode]))
                     # Black magic calculation
                     result = np.array([[distMatrix[nodeToIndex[rowNode], nodeToIndex[colNode]]*len(colNode), len(colNode)] for rowNode, colNode in nodeProduct])
-                    newMatrix[newRowIndex, newColIndex] = result[:,0].sum()/result[:,1].sum()
-                    newMatrix[newColIndex, newRowIndex] = result[:,0].sum()/result[:,1].sum()
+                    newMatrix[newNodeToIndex[rowNode], newNodeToIndex[colNode]] = result[:,0].sum()/result[:,1].sum()
+                    newMatrix[newNodeToIndex[colNode], newNodeToIndex[rowNode]] = result[:,0].sum()/result[:,1].sum()
             
             # Update all
             distMatrix = newMatrix
             nodeToIndex = newNodeToIndex
-            indexToNode = newIndexToNode
         
         return nodes[0]
     
@@ -160,14 +158,11 @@ class Newick:
         return Node(children=tuple(nodeList), distance=distance)
     
     @staticmethod
-    def isSubtree(root1: Node, root2: Node) -> bool:
+    def Subtree(root1: Node, root2: Node) -> bool:
         # Ben TODO checks if root2 is a substree of root1
         
         pass
     
     @staticmethod
     def Equal(node1: Node, node2: Node):
-        # Ben TODO checks if two tree are equal
         return node1 == node2
-    
-    
