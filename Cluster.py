@@ -120,10 +120,11 @@ class Newick:
     def ToNewick(root: Node) -> str:
         """Converts rooted tree into newick string.
         """
+        distance = "" if root.distance is None else f":{root.distance}"
         if root.isLeaf:
-            return f"{root.taxon}:{root.distance}"
+            return f"{root.taxon}{distance}"
         else:
-            return f"({','.join([Newick.ToNewick(node) for node in root.children])}):{root.distance}"
+            return f"({','.join([Newick.ToNewick(node) for node in root.children])}){distance}"
     
     @staticmethod
     def ToTree(newick: str) -> Node:
@@ -145,8 +146,12 @@ class Newick:
             return commaList
 
         colonIndex = newick.rfind(':')
-        distance = float(newick[colonIndex+1:])
-        newick = newick[:colonIndex]
+        if colonIndex == -1:
+            distance = None
+        else:
+            distance = float(newick[colonIndex+1:])
+            newick = newick[:colonIndex]
+            
         if newick[0] != '(':
             return Node(taxon=newick, distance=distance)
         
@@ -182,3 +187,10 @@ class Newick:
             for child in node1.children:
                 flag = flag or Newick.Clade(child, node2)
         return flag
+    
+    @staticmethod
+    def Contain(node1: Node, node2: Node) -> bool:
+        """Evaluates if node2 is contained in node1, uses loose equality.
+        """
+        pass
+    

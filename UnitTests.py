@@ -100,6 +100,15 @@ def test_ClusterUPGMA():
     root2 = Newick.ToTree("((e:11.0,(a:8.5,b:8.5):2.5):5.5,(c:14.0,d:14.0):2.5):0.0")
     newick2 = Newick.ToNewick(root2)
     assert newick1 == newick2
+    
+def test_NewickToTree():
+    root = Newick.ToTree("((e:11.0,(a:8.5,b:8.5):2.5):5.5,(c:14.0,d:14.0):2.5):0.0")
+    newick = Newick.ToNewick(root)
+    assert newick == "((e:11.0,(a:8.5,b:8.5):2.5):5.5,(c:14.0,d:14.0):2.5):0.0"
+    
+    root = Newick.ToTree("((e,(a,b)),(c,d))")
+    newick = Newick.ToNewick(root)
+    assert newick == "((e,(a,b)),(c,d))"
 
 def test_NewickEqual():
     root1 = Newick.ToTree("(((((Monkey:0.5,Human:0.5):5.75,Dog:6.25):2.0,(Chicken:4.0,Turtle:4.0):4.25):6.25,Tuna:14.5):2.5,Moth:17.0):0.0")
