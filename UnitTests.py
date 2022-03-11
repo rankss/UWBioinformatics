@@ -109,3 +109,12 @@ def test_NewickEqual():
     root1 = Newick.ToTree("((e:11.0,(a:8.5,b:8.5):2.5):5.5,(c:14.0,d:14.0):2.5):0.0")
     root2 = Newick.ToTree("((e:10.0,(a:8.5,b:8.5):2.5):5.5,(c:14.0,d:14.0):2.5):0.0")
     assert Newick.Equal(root1, root2) == False
+    
+def test_NewickClade():
+    root1 = Newick.ToTree("(f:10.0,((f:10.0,(a:8.5,b:8.5):2.5):5.5,(c:14.0,d:14.0):2.5):5.0):0.0")
+    root2 = Newick.ToTree("(c:14.0,d:14.0):0.0")
+    assert Newick.Clade(root1, root2) == True
+    
+    root1 = Newick.ToTree("(f:10.0,((f:10.0,(a:8.5,b:8.5):2.5):5.5,(c:14.0,d:14.0):2.5):5.0):0.0")
+    root2 = Newick.ToTree("(a:14.0,d:14.0):0.0")
+    assert Newick.Clade(root1, root2) == False

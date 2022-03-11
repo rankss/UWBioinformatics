@@ -19,18 +19,23 @@ class Node:
             length += len(node)
         return length
     
-    def __eq__(self, other):
+    def __eq__(self, other, strict=True):
+        """Equality of two nodes |
+        If strict, check equal distance |
+        else loose, distance is not checked.
+        """
+        equalDistance = (self.distance == other.distance) if strict else True
+        
         if self.isLeaf ^ other.isLeaf:
             return False
         if self.isLeaf and other.isLeaf:
-            return self.taxon == other.taxon and self.distance == other.distance
-
+            return self.taxon == other.taxon and equalDistance
+        
         flag = {node:False for node in self.children}
         for (selfChild, otherChild) in product(self.children, other.children):
-            if selfChild == otherChild:
-                flag[selfChild] = flag[selfChild] or True
+            flag[selfChild] = flag[selfChild] or selfChild.__eq__(otherChild, strict)
                 
-        return all(flag.values()) and self.distance == other.distance
+        return all(flag.values()) and equalDistance
         
     def __hash__(self) -> int: # DO NOT HASH SOMETHING THAT IS MUTABLE
         return hash((self.taxon, self.children))
@@ -65,6 +70,8 @@ class Cluster:
         self.taxa = taxa
         
     def upgma(self) -> Node:
+        """Performs UPGMA on a distance matrix with corresponding taxa.
+        """
         # https://codereview.stackexchange.com/questions/263416/upgma-tree-building-in-python with a modifications
         distMatrix = self.distMatrix
         # Initialize list of node and maps of nodes -> index
@@ -74,29 +81,30 @@ class Cluster:
         for i in range(1, len(self.taxa)):
             # Find min of distMatrix and obtain their corresponding nodes and assign distance
             index = np.unravel_index(distMatrix.argmin(), distMatrix.shape)
-            value = distMatrix[index[0], index[1]]
+            distance = distMatrix[index[0], index[1]]
             rowNode, colNode = nodes[index[0]], nodes[index[1]]
-            rowNode.setDistance(value/2), colNode.setDistance(value/2)
-            
+            rowNode.setDistance(distance/2), colNode.setDistance(distance/2)
             # Merge row/col Nodes into new node, remove them and append merged node
             mergeNode = Node(children=(rowNode, colNode))
             nodes.remove(rowNode), nodes.remove(colNode)
             nodes.append(mergeNode)
             
-            # Reinitialize list of node and maps of nodes <-> index
+            # Reinitialize list of node and maps of nodes -> index
             newMatrix = np.full((len(self.taxa)-i, len(self.taxa)-i), np.inf)
             newNodeToIndex = {node:i for i, node in enumerate(nodes)}
-            
+                
             # Loop in upper triangle fashion, lower triangle can be filled by swapping indices
-            for i, rowNode in enumerate(nodes[:-1]):
-                for colNode in nodes[i+1:]:
-                    nodeProduct = list(product([rowNode], 
-                                               list(colNode.children) if colNode == mergeNode else [colNode]))
-                    # Black magic calculation
-                    result = np.array([[distMatrix[nodeToIndex[rowNode], nodeToIndex[colNode]]*len(colNode), len(colNode)] for rowNode, colNode in nodeProduct])
-                    newMatrix[newNodeToIndex[rowNode], newNodeToIndex[colNode]] = result[:,0].sum()/result[:,1].sum()
-                    newMatrix[newNodeToIndex[colNode], newNodeToIndex[rowNode]] = result[:,0].sum()/result[:,1].sum()
-            
+            for j, rowNode in enumerate(nodes[:-1]):
+                for colNode in nodes[j+1:]:
+                    if colNode != mergeNode:
+                        newMatrix[newNodeToIndex[rowNode], newNodeToIndex[colNode]] = distMatrix[nodeToIndex[rowNode], nodeToIndex[colNode]]
+                        newMatrix[newNodeToIndex[colNode], newNodeToIndex[rowNode]] = distMatrix[nodeToIndex[colNode], nodeToIndex[rowNode]]
+                    else:
+                        nodeProduct = product([rowNode], list(colNode.children))
+                        result = np.array([[distMatrix[nodeToIndex[rowNode], nodeToIndex[colNode]]*len(colNode), len(colNode)] for rowNode, colNode in nodeProduct])
+                        newMatrix[newNodeToIndex[rowNode], newNodeToIndex[colNode]] = result[:,0].sum()/result[:,1].sum()
+                        newMatrix[newNodeToIndex[colNode], newNodeToIndex[rowNode]] = result[:,0].sum()/result[:,1].sum()
+
             # Update all
             distMatrix = newMatrix
             nodeToIndex = newNodeToIndex
@@ -109,7 +117,9 @@ class Cluster:
 
 class Newick:
     @staticmethod
-    def ToNewick(root: Node):
+    def ToNewick(root: Node) -> str:
+        """Converts rooted tree into newick string.
+        """
         if root.isLeaf:
             return f"{root.taxon}:{root.distance}"
         else:
@@ -117,14 +127,10 @@ class Newick:
     
     @staticmethod
     def ToTree(newick: str) -> Node:
+        """Converts newick string into rooted tree.
+        """
         def findComma(newick: str) -> list:
             """Finds all comma indices between first and last bracket appended with -1.
-
-            Args:
-                newick (str): (xxx, (xxx, xxx))
-
-            Returns:
-                list: (xxx, (xxx, xxx)) -> [4, -1]
             """
             bracketCount = 0
             commaList = []
@@ -158,11 +164,21 @@ class Newick:
         return Node(children=tuple(nodeList), distance=distance)
     
     @staticmethod
-    def Subtree(root1: Node, root2: Node) -> bool:
-        # Ben TODO checks if root2 is a substree of root1
-        
-        pass
+    def Equal(node1: Node, node2: Node, strict=True) -> bool:
+        """Equality of two nodes |
+        If strict, check equal distance |
+        else loose, distance is not checked.
+        """
+        return node1.__eq__(node2, strict)
     
     @staticmethod
-    def Equal(node1: Node, node2: Node):
-        return node1 == node2
+    def Clade(node1: Node, node2: Node) -> bool:
+        """Evaluates if node2 is a clade of node1, uses loose equality.
+        """
+        if Newick.Equal(node1, node2, strict=False):
+            return True
+        else:
+            flag = False
+            for child in node1.children:
+                flag = flag or Newick.Clade(child, node2)
+        return flag
