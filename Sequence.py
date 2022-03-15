@@ -1,6 +1,8 @@
 from Error import InvalidSequenceError, InvalidSequenceTypeError
 from typing import Literal
+from dataclasses import dataclass
 
+@dataclass
 class Sequence:
     """_summary_
     """
@@ -61,12 +63,6 @@ class Sequence:
     def __len__(self):
         return len(self.sequence)
     
-    def __eq__(self, other):
-        sameSequence = self.sequence == other.sequence
-        sameName = self.taxa == other.taxa
-        sameType = self.sequenceType == other.sequenceType
-        return sameSequence and sameName and sameType
-
     def __clean(self):
         self.sequence = self.sequence.strip().upper()
         return

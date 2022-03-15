@@ -3,7 +3,8 @@ from SequenceAlignment import PWA
 from Sequence import Sequence, AASequence, NTSequence
 from Score import Score
 from Parser import Parser
-from Cluster import Cluster, Newick
+from Cluster import Cluster
+from Tree import Newick
  
 def test_SequenceGeneneral():
     NTSeq = Sequence("ACTG", "A")
