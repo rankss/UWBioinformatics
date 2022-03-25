@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Literal
 from Sequence import Sequence
 from Score import Score
-from Error import InvalidAlignmentTypeError
 from Cluster import Cluster
 
 class PWA:
@@ -17,175 +16,54 @@ class PWA:
     
     GLOBAL = 0
     LOCAL = 1
-    __VALID_ALIGNMENT_TYPE = {GLOBAL, LOCAL}
     __DIR_DICT = {
         "L": [-1, 0], # Left
         "U": [0, -1], # Up
         "D": [-1, -1] # Diagonal
     }
+
+    # @staticmethod
+    # def __match(self, temp_path: str): 
+    #     # Charlotte TODO Match has bug for local alignment
+    #     hMatch, vMatch = "", ""
+    #     hCounter, vCounter = 0, 0
+    #     for direction in temp_path:
+    #         if direction == "D":
+    #             hMatch += self.hSeq[hCounter]
+    #             vMatch += self.vSeq[vCounter]
+    #             hCounter += 1
+    #             vCounter += 1
+    #         if direction == "L":
+    #             hMatch += self.hSeq[hCounter]
+    #             vMatch += "-"
+    #             hCounter += 1
+    #         if direction == "U":
+    #             hMatch += "-"
+    #             vMatch += self.vSeq[vCounter]
+    #             vCounter += 1
+    #     match = f"{hMatch}\n{vMatch}"
+    #     self.alignments.append(match)
+    #     return
     
-    def __init__(self, hSeq: Sequence, vSeq: Sequence, score: Score):
-        self.score = score
-        self.hSeq = hSeq
-        self.vSeq = vSeq
-        self.dpArray = None
-        self.direction = None
-        self.paths = None
-        self.alignments = None
-        self.optimal = None
-
-        return
-
-    def __match(self, temp_path: str): 
-        # Charlotte TODO Match has bug for local alignment
-        hMatch, vMatch = "", ""
-        hCounter, vCounter = 0, 0
-        for direction in temp_path:
-            if direction == "D":
-                hMatch += self.hSeq[hCounter]
-                vMatch += self.vSeq[vCounter]
-                hCounter += 1
-                vCounter += 1
-            if direction == "L":
-                hMatch += self.hSeq[hCounter]
-                vMatch += "-"
-                hCounter += 1
-            if direction == "U":
-                hMatch += "-"
-                vMatch += self.vSeq[vCounter]
-                vCounter += 1
-        match = f"{hMatch}\n{vMatch}"
-        self.alignments.append(match)
-        return
-
-    def __path(self, temp_path: str, nodes: list, col: int, row: int, alignment: Literal=GLOBAL):
+    def __path(temp_path: str, nodes: list, dpArray: np.ndarray, direction: list, col: int, row: int, alignment: Literal=GLOBAL) -> tuple:
         if alignment == PWA.GLOBAL:
             comparison = col > 0 or row > 0
         if alignment == PWA.LOCAL:
-            comparison = self.dpArray[row, col] != 0
+            comparison = dpArray[row, col] != 0
             
         if comparison:
-            curr = self.direction[row][col]
+            curr = direction[row][col]
             for direction in curr:
-                self.__path(temp_path + direction, nodes + [(col, row)],
-                            col + PWA.__DIR_DICT[direction][0],
-                            row + PWA.__DIR_DICT[direction][1],
-                            alignment)
-        else:
-            self.__match(temp_path[::-1])
-            self.paths.append(nodes)
-        return
+                PWA.__path(temp_path + direction, nodes + [(col, row)],
+                           dpArray, direction,
+                           col + PWA.__DIR_DICT[direction][0],
+                           row + PWA.__DIR_DICT[direction][1],
+                           alignment)
         
-    def __global(self):
-        """Performs Needleman-Wunsch for sequence pair with affine gap penalty
-        """
-        hLen, vLen = len(self.hSeq) + 1, len(self.vSeq) + 1
-        exist, extend = self.score.existence, self.score.extension
-        matrix = self.score.matrix
+        # TODO Charlotte: Insert match code here
+        # 
         
-        # Define recurrence matrices
-        self.dpArray = np.zeros((vLen, hLen))
-        self.direction = [["" for i in range(hLen)] for j in range(vLen)]
-        hGap = np.full((len(self.vSeq) + 1, len(self.hSeq) + 1), -np.inf)
-        vGap = np.full((len(self.vSeq) + 1, len(self.hSeq) + 1), -np.inf)
-        match = np.full((len(self.vSeq) + 1, len(self.hSeq) + 1), -np.inf)
-
-        
-        for col in range(1, hLen):
-            vGap[0, col] = exist + col*extend
-            self.dpArray[0, col] = exist + col*extend
-            self.direction[0][col] += "L"
-
-        for row in range(1, vLen):
-            hGap[row, 0] = exist + row*extend
-            self.dpArray[row, 0] = exist + row*extend
-            self.direction[row][0] += "U"
-
-        # Affine gap penalty recurrence relation
-        for row in range(1, vLen):
-            for col in range(1, hLen):
-                hGap[row, col] = max(hGap[row, col-1] + extend,
-                                     self.dpArray[row, col-1] + exist + extend)
-                
-                vGap[row, col] = max(vGap[row-1, col] + extend,
-                                     self.dpArray[row-1, col] + exist + extend)
-                
-                match[row, col] = self.dpArray[row-1, col-1] + matrix[self.vSeq[row-1]][self.hSeq[col-1]]
-                
-                self.dpArray[row, col] = max(hGap[row, col], vGap[row, col], match[row, col])
-                
-                # Direction
-                if self.dpArray[row, col] == hGap[row, col]:
-                    self.direction[row][col] += "L"
-                if self.dpArray[row, col] == vGap[row, col]:
-                    self.direction[row][col] += "U"
-                if self.dpArray[row, col] == match[row, col]:
-                    self.direction[row][col] += "D"
-
-        # Find alignment(s)
-        self.optimal = self.dpArray[vLen-1][hLen-1]
-        self.alignments = []
-        self.paths = []
-        self.__path("", [], hLen-1, vLen-1, PWA.GLOBAL)
-        return 
-
-    def __local(self):
-        """Performs Smith-Waterman for sequence pair with affine gap penalty
-        """
-        hLen, vLen = len(self.hSeq) + 1, len(self.vSeq) + 1
-        exist, extend = self.score.existence, self.score.extension
-        matrix = self.score.matrix
-
-        # Define recurrence matrices
-        self.dpArray = np.zeros((vLen, hLen))
-        self.direction = [["" for i in range(hLen)] for j in range(vLen)]
-        hGap = np.zeros((len(self.vSeq) + 1, len(self.hSeq) + 1))
-        vGap = np.zeros((len(self.vSeq) + 1, len(self.hSeq) + 1))
-        match = np.zeros((len(self.vSeq) + 1, len(self.hSeq) + 1))
-
-        # Affine gap penalty recurrence relation
-        for row in range(1, vLen):
-            for col in range(1, hLen):
-                hGap[row, col] = max(0, hGap[row, col-1] + extend,
-                                     self.dpArray[row, col-1] + exist + extend)
-                
-                vGap[row, col] = max(0, vGap[row-1, col] + extend,
-                                     self.dpArray[row-1, col] + exist + extend)
-                
-                match[row, col] = self.dpArray[row-1, col-1] + matrix[self.vSeq[row-1]][self.hSeq[col-1]]
-                
-                self.dpArray[row, col] = max(0, hGap[row, col], vGap[row, col], match[row, col])
-                
-                # Direction
-                if self.dpArray[row, col] == hGap[row, col]:
-                    self.direction[row][col] += "L"
-                if self.dpArray[row, col] == vGap[row, col]:
-                    self.direction[row][col] += "U"
-                if self.dpArray[row, col] == match[row, col]:
-                    self.direction[row][col] += "D"
-
-        # Create alignment(s)
-        self.alignments = []
-        self.paths = []
-        self.optimal = np.max(self.dpArray)
-        for row in range(vLen):
-            for col in range(hLen):
-                if self.dpArray[row, col] == self.optimal:
-                    self.__path("", [], col, row, PWA.LOCAL)
-        return
-    
-    def align(self, alignment: Literal=GLOBAL):
-        if alignment not in PWA.__VALID_ALIGNMENT_TYPE:
-            raise InvalidAlignmentTypeError()
-    
-        if alignment == PWA.GLOBAL:
-            self.__global()
-        if alignment == PWA.LOCAL:
-            self.__local()
-        return
-    
-    def summary(self):
-        pass
+        return nodes, PWA.__match(temp_path[::-1])
     
     @staticmethod
     def Global(hSeq: Sequence, vSeq: Sequence, score: Score) -> PWAData:
@@ -231,8 +109,6 @@ class PWA:
                     direction[row][col] += "D"
 
         optimal = dpArray[vLen-1][hLen-1]
-        alignments = []
-        paths = []
         PWA.__path("", [], hLen-1, vLen-1, PWA.GLOBAL)
         
         return
@@ -271,11 +147,7 @@ class PWA:
                 if dpArray[row, col] == optimal:
                     PWA.__path("", [], col, row, PWA.LOCAL)
                 
-        return np.max(dpArray)
-        
-    @staticmethod
-    def Similarity(hSeq: Sequence, vSeq: Sequence) -> float:
-        pass
+        return
 
 class MSA:
     """[summary]

@@ -3,19 +3,16 @@ from itertools import product
 class AdjList:
     def __init__(self):
         pass
-    
-    def root(self) -> Node:
-        pass
 
 class Node:
     def __init__(self, taxon: str=None, children: tuple=(), distance: float=0.0):
         self.taxon = taxon
         self.children = children
         self.distance = distance
-        if self.taxon is not None:
-            self.isLeaf = True
-        else:
+        if len(children):
             self.isLeaf = False
+        else:
+            self.isLeaf = True
             
     def __len__(self) -> int:
         if self.isLeaf:

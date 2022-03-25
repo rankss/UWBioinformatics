@@ -24,7 +24,7 @@ class Cluster:
             rowNode, colNode = nodes[index[0]], nodes[index[1]]
             rowNode.setDistance(distance/2), colNode.setDistance(distance/2)
             # Merge row/col Nodes into new node, remove them and append merged node
-            mergeNode = Node(children=(rowNode, colNode))
+            mergeNode = Node(taxon=f"{rowNode.taxon}-{colNode.taxon}", children=(rowNode, colNode))
             nodes.remove(rowNode), nodes.remove(colNode)
             nodes.append(mergeNode)
             
