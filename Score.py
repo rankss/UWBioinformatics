@@ -37,17 +37,17 @@ class Score:
         self.mismatch = mismatch
         self.existence = existence
         self.extension = extension
-        self.__construct()
+        self._construct()
         return
 
-    def __validateMatrix(self):
+    def _validateMatrix(self):
         for key in self.matrix.keys():
             if key not in Sequence.AMINO_ACIDS:
                 raise InvalidMatrixError(f"InvalidMatrixError: {key} is not a valid amino acid")
 
         return
     
-    def __construct(self):
+    def _construct(self):
         self.matrix = {}
         for vmonomer in Sequence.AMINO_ACIDS:
             self.matrix[vmonomer] = {}
@@ -63,5 +63,5 @@ class Score:
     
     def setMatrix(self, matrix: dict):
         self.matrix = matrix
-        self.__validateMatrix()
+        self._validateMatrix()
         return

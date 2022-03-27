@@ -46,12 +46,12 @@ class Sequence:
         self.sequenceType = sequenceType
         self.summary = {}
         
-        self.__clean()
+        self._clean()
         if self.sequenceType is None:
-            self.__autoDetectSequenceType()
-        self.__validate()
+            self._autoDetectSequenceType()
+        self._validate()
         if type(self) is Sequence:
-            self.__transform()
+            self._transform()
         return
 
     def __str__(self):
@@ -63,15 +63,15 @@ class Sequence:
     def __len__(self):
         return len(self.sequence)
     
-    def __clean(self):
+    def _clean(self):
         self.sequence = self.sequence.strip().upper()
         return
     
-    def __validate(self):
+    def _validate(self):
         if self.sequenceType not in [Sequence.NUCLEOTIDES, Sequence.AMINO_ACIDS]:
             raise InvalidSequenceTypeError("Sequence type is not valid.")
     
-    def __transform(self):
+    def _transform(self):
         if self.sequenceType == Sequence.NUCLEOTIDES:
             self.__class__ = NTSequence
             return
@@ -80,7 +80,7 @@ class Sequence:
             return
         return
     
-    def __autoDetectSequenceType(self):
+    def _autoDetectSequenceType(self):
         monomers = set(self.sequence)
         if monomers.issubset(set(Sequence.NUCLEOTIDES)):
             self.sequenceType = Sequence.NUCLEOTIDES

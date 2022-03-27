@@ -16,7 +16,7 @@ class PWA:
     
     GLOBAL = 0
     LOCAL = 1
-    __DIR_DICT = {
+    _DIR_DICT = {
         "L": [-1, 0], # Left
         "U": [0, -1], # Up
         "D": [-1, -1] # Diagonal
@@ -45,7 +45,7 @@ class PWA:
     #     self.alignments.append(match)
     #     return
     
-    def __path(temp_path: str, nodes: list, dpArray: np.ndarray, direction: list, col: int, row: int, alignment: Literal=GLOBAL) -> tuple:
+    def _path(temp_path: str, nodes: list, dpArray: np.ndarray, direction: list, col: int, row: int, alignment: Literal=GLOBAL) -> tuple:
         if alignment == PWA.GLOBAL:
             comparison = col > 0 or row > 0
         if alignment == PWA.LOCAL:
@@ -54,16 +54,16 @@ class PWA:
         if comparison:
             curr = direction[row][col]
             for direction in curr:
-                PWA.__path(temp_path + direction, nodes + [(col, row)],
+                PWA._path(temp_path + direction, nodes + [(col, row)],
                            dpArray, direction,
-                           col + PWA.__DIR_DICT[direction][0],
-                           row + PWA.__DIR_DICT[direction][1],
+                           col + PWA._DIR_DICT[direction][0],
+                           row + PWA._DIR_DICT[direction][1],
                            alignment)
         
         # TODO Charlotte: Insert match code here
         # 
         
-        return nodes, PWA.__match(temp_path[::-1])
+        return nodes, PWA._match(temp_path[::-1])
     
     @staticmethod
     def Global(hSeq: Sequence, vSeq: Sequence, score: Score) -> PWAData:
@@ -109,7 +109,7 @@ class PWA:
                     direction[row][col] += "D"
 
         optimal = dpArray[vLen-1][hLen-1]
-        PWA.__path("", [], hLen-1, vLen-1, PWA.GLOBAL)
+        PWA._path("", [], hLen-1, vLen-1, PWA.GLOBAL)
         
         return
 
@@ -145,8 +145,8 @@ class PWA:
         for row in range(vLen):
             for col in range(hLen):
                 if dpArray[row, col] == optimal:
-                    PWA.__path("", [], col, row, PWA.LOCAL)
-                
+                    PWA._path("", [], col, row, PWA.LOCAL)
+            
         return
 
 class MSA:

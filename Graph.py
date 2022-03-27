@@ -21,10 +21,13 @@ class Node:
     
 class Digraph:
     def __init__(self, nodes: list):
-        self.tmpNodes = nodes
         self.adjList = {node:[] for node in nodes}
+        self._tmpNodes = nodes # private
         
-    def __str__(self):
+    def __eq__(self, other) -> bool:
+        pass
+        
+    def __str__(self) -> str:
         printValue = ""
         for key, item in self.adjList.items():
             nodes = ' | '.join([f"{node}" for node in item])
@@ -42,15 +45,13 @@ class Digraph:
         for node, distance in zip(nodes, distances):
             node.distance = distance
             self.adjList[interNode].append(node)
-            self.tmpNodes.remove(node)
-        self.tmpNodes.append(interNode)
+            self._tmpNodes.remove(node)
+        self._tmpNodes.append(interNode)
         
         return interNode
     
-    def parseNewick(self, newick: str):
-        pass
-    
     def toNewick(self) -> str:
+        
         pass
     
         
