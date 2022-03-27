@@ -1,6 +1,6 @@
 import numpy as np
 from itertools import product
-from Tree import Node
+from Graph import Node, Digraph
 
 class Cluster:
     def __init__(self, distMatrix: np.ndarray, taxa: list):
@@ -8,47 +8,46 @@ class Cluster:
         np.fill_diagonal(self.distMatrix, np.inf)
         self.taxa = taxa
         
-    def upgma(self) -> Node:
+    def upgma(self) -> Digraph:
         """Performs UPGMA on a distance matrix with corresponding taxa.
         """
-        # https://codereview.stackexchange.com/questions/263416/upgma-tree-building-in-python with a modifications
         distMatrix = self.distMatrix
         # Initialize list of node and maps of nodes -> index
-        nodes = [Node(taxon=taxon) for taxon in self.taxa]
-        nodeToIndex = {node:i for i, node in enumerate(nodes)}
+        digraph = Digraph([Node(taxon) for taxon in self.taxa])
+        nodeToIndex = {node:i for i, node in enumerate(digraph.tmpNodes)}
         
         for i in range(1, len(self.taxa)):
             # Find min of distMatrix and obtain their corresponding nodes and assign distance
             index = np.unravel_index(distMatrix.argmin(), distMatrix.shape)
             distance = distMatrix[index[0], index[1]]
-            rowNode, colNode = nodes[index[0]], nodes[index[1]]
-            rowNode.setDistance(distance/2), colNode.setDistance(distance/2)
+            rowNode, colNode = digraph.tmpNodes[index[0]], digraph.tmpNodes[index[1]]
+            
             # Merge row/col Nodes into new node, remove them and append merged node
-            mergeNode = Node(taxon=f"{rowNode.taxon}-{colNode.taxon}", children=(rowNode, colNode))
-            nodes.remove(rowNode), nodes.remove(colNode)
-            nodes.append(mergeNode)
+            rowDist = distance/2 - (digraph.adjList[rowNode][0].distance if len(digraph.adjList[rowNode]) else 0)
+            colDist = distance/2 - (digraph.adjList[colNode][0].distance if len(digraph.adjList[colNode]) else 0)
+            mergeNode = digraph.join((rowNode, colNode), (rowDist, colDist))
             
             # Reinitialize list of node and maps of nodes -> index
             newMatrix = np.full((len(self.taxa)-i, len(self.taxa)-i), np.inf)
-            newNodeToIndex = {node:i for i, node in enumerate(nodes)}
+            newNodeToIndex = {node:i for i, node in enumerate(digraph.tmpNodes)}
                 
             # Loop in upper triangle fashion, lower triangle can be filled by swapping indices
-            for j, rowNode in enumerate(nodes[:-1]):
-                for colNode in nodes[j+1:]:
+            for j, rowNode in enumerate(digraph.tmpNodes[:-1]):
+                for colNode in digraph.tmpNodes[j+1:]:
                     if colNode != mergeNode:
                         newMatrix[newNodeToIndex[rowNode], newNodeToIndex[colNode]] = distMatrix[nodeToIndex[rowNode], nodeToIndex[colNode]]
                         newMatrix[newNodeToIndex[colNode], newNodeToIndex[rowNode]] = distMatrix[nodeToIndex[colNode], nodeToIndex[rowNode]]
                     else:
-                        nodeProduct = product([rowNode], list(colNode.children))
-                        result = np.array([[distMatrix[nodeToIndex[rowNode], nodeToIndex[colNode]]*len(colNode), len(colNode)] for rowNode, colNode in nodeProduct])
-                        newMatrix[newNodeToIndex[rowNode], newNodeToIndex[colNode]] = result[:,0].sum()/result[:,1].sum()
-                        newMatrix[newNodeToIndex[colNode], newNodeToIndex[rowNode]] = result[:,0].sum()/result[:,1].sum()
+                        nodeProduct = product([rowNode], digraph.adjList[colNode])
+                        totalDistance = sum([distMatrix[nodeToIndex[node1], nodeToIndex[node2]]*node2.leaves for node1, node2 in nodeProduct])
+                        newMatrix[newNodeToIndex[rowNode], newNodeToIndex[colNode]] = totalDistance/colNode.leaves
+                        newMatrix[newNodeToIndex[colNode], newNodeToIndex[rowNode]] = totalDistance/colNode.leaves
 
             # Update all
             distMatrix = newMatrix
             nodeToIndex = newNodeToIndex
         
-        return nodes[0]
+        return digraph
     
     def neighborJoining(self) -> Node:
         # Charlotte TODO

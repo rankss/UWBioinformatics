@@ -1,4 +1,5 @@
 from Sequence import Sequence
+from Graph import Digraph
 
 class Parser:
     
@@ -21,4 +22,8 @@ class Parser:
         sequenceCollection.append(Sequence(sequence, taxa))
         
         return sequenceCollection
+    
+    @staticmethod
+    def Newick(newick: str) -> Digraph:
+        pass
     
