@@ -78,35 +78,6 @@ def test_ClusterUPGMA():
     )
     cluster = Cluster(distances, taxa)
     digraph = cluster.upgma()
-    print(digraph)
+    newick = digraph.toNewick()
+    assert newick == "(Moth:17.0,(Tuna:14.5,((Turtle:4.0,Chicken:4.0):4.25,(Dog:6.25,(Human:0.5,Monkey:0.5):5.75):2.0):6.25):2.5):0.0"
     
-    # root2 = Newick.ToTree("(Moth:17.0,(Tuna:14.5,((Turtle:4.0,Chicken:4.0):4.25,(Dog:6.25,(Human:0.5,Monkey:0.5):5.75):2.0):6.25):2.5):0.0")
-    # newick2 = Newick.ToNewick(root2)
-    # assert newick == newick2
-    
-    # data from https://en.wikipedia.org/wiki/UPGMA
-    # taxa = ["a", "b", "c", "d", "e"]
-    # distances = np.array(
-    #     [
-    #         [0, 17, 21, 31, 23],
-    #         [17, 0, 30, 34, 21],
-    #         [21, 30, 0, 28, 39],
-    #         [31, 34, 28, 0, 43],
-    #         [23, 21, 39, 43, 0]
-    #     ]
-    # )
-    # cluster = Cluster(distances, taxa)
-    # root1 = cluster.upgma()
-    # newick1 = Newick.ToNewick(root1)
-    # root2 = Newick.ToTree("((e:11.0,(a:8.5,b:8.5):2.5):5.5,(c:14.0,d:14.0):2.5):0.0")
-    # newick2 = Newick.ToNewick(root2)
-    # assert newick1 == newick2
-    
-# def test_NewickToTree():
-#     root = Newick.ToTree("((e:11.0,(a:8.5,b:8.5):2.5):5.5,(c:14.0,d:14.0):2.5):0.0")
-#     newick = Newick.ToNewick(root)
-#     assert newick == "((e:11.0,(a:8.5,b:8.5):2.5):5.5,(c:14.0,d:14.0):2.5):0.0"
-    
-#     root = Newick.ToTree("((e,(a,b)),(c,d))")
-#     newick = Newick.ToNewick(root)
-#     assert newick == "((e,(a,b)),(c,d))"

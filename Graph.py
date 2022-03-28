@@ -7,24 +7,28 @@ from dataclasses import dataclass
 @dataclass
 class Node:
     taxon: str
-    distance: float = 0
+    distance: float = 0.0
+    total: float = 0.0
     leaves: int = 1 # If node is leaf leaves = 1, else leaves = sum of children's leaves
     
     def __eq__(self, other):
         return self.taxon == other.taxon
     
+    def __len__(self):
+        return len(self.taxon)
+    
     def __hash__(self):
         return hash(self.taxon)
     
     def __repr__(self):
-        return f"{self.taxon}:{self.distance}"
+        return f"({self.taxon}:{self.distance})"
     
 class Digraph:
-    def __init__(self, nodes: list):
+    def __init__(self, nodes: list, edges: list=None):
         self.adjList = {node:[] for node in nodes}
-        self._tmpNodes = nodes # private
         
     def __eq__(self, other) -> bool:
+        
         pass
         
     def __str__(self) -> str:
@@ -35,23 +39,23 @@ class Digraph:
             
         return printValue
 
-    def join(self, nodes: tuple, distances: tuple) -> Node:
+    def join(self, nodes: tuple, tmpNodes: list) -> Node:
         """Joins a tuple of nodes together
-        | Distances tuple correspond to InterNode -> aNode
-        | InterNode taxon are the node tuple's taxon joined with '-'
         """
-        interNode = Node('-'.join([node.taxon for node in nodes]), leaves=sum([node.leaves for node in nodes]))
+        interName = ','.join([f"{node.taxon}:{node.distance}" for node in nodes])
+        interNode = Node(f"({interName})", leaves=sum([node.leaves for node in nodes]))
         self.adjList[interNode] = []
-        for node, distance in zip(nodes, distances):
-            node.distance = distance
+        for node in nodes:
             self.adjList[interNode].append(node)
-            self._tmpNodes.remove(node)
-        self._tmpNodes.append(interNode)
+            tmpNodes.remove(node)
+        tmpNodes.append(interNode)
         
         return interNode
     
     def toNewick(self) -> str:
-        
-        pass
+        nodes = list(self.adjList.keys())
+        newickNode = max(nodes, key=len)
+        print(f"{newickNode.taxon}:{newickNode.distance}")
+        return f"{newickNode.taxon}:{newickNode.distance}"
     
         

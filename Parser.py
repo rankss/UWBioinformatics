@@ -25,5 +25,20 @@ class Parser:
     
     @staticmethod
     def Newick(newick: str) -> Digraph:
-        pass
+        """Converts newick string into rooted tree.
+        """
+        def findComma(newick: str) -> list:
+            """Finds all comma indices between first and last bracket appended with -1.
+            """
+            bracketCount = 0
+            commaList = []
+            for i, ch in enumerate(newick):
+                if ch == '(':
+                    bracketCount += 1
+                if ch == ')':
+                    bracketCount -= 1
+                if ch == ',' and bracketCount == 1:
+                    commaList.append(i)
+            commaList.append(-1)
+            return commaList
     
