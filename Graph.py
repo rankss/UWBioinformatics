@@ -1,9 +1,5 @@
 from dataclasses import dataclass
 
-# Convert node into graph node
-# Use digraph to represent a tree
-# Convert all functions to use digraph
-
 @dataclass
 class Node:
     taxon: str
@@ -11,25 +7,38 @@ class Node:
     total: float = 0.0
     leaves: int = 1 # If node is leaf leaves = 1, else leaves = sum of children's leaves
     
-    def __eq__(self, other):
-        return self.taxon == other.taxon
+    def __eq__(self, other) -> bool:
+        return self.taxon == other.taxon and self.distance == other.distance
     
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.taxon)
     
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.taxon)
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"({self.taxon}:{self.distance})"
+
+@dataclass
+class Edge:
+    node1: Node
+    node2: Node
+    weight: float
     
 class Digraph:
-    def __init__(self, nodes: list, edges: list=None):
+    def __init__(self, nodes: list[Node], edges: list=None):
         self.adjList = {node:[] for node in nodes}
+        if edges:
+            for edge in edges:
+                edge.node2.distance = edge.weight
+                self.adjList[edge.node1].append()
         
     def __eq__(self, other) -> bool:
-        
-        pass
+        for key in self.adjList:
+            if not (key in other.adjList and set(self.adjList[key]) == set(other.adjList[key])):
+                return False
+            
+        return True
         
     def __str__(self) -> str:
         printValue = ""
@@ -39,7 +48,7 @@ class Digraph:
             
         return printValue
 
-    def join(self, nodes: tuple, tmpNodes: list) -> Node:
+    def join(self, nodes: tuple[Node], tmpNodes: list[Node]) -> Node:
         """Joins a tuple of nodes together
         """
         interName = ','.join([f"{node.taxon}:{node.distance}" for node in nodes])
@@ -55,7 +64,5 @@ class Digraph:
     def toNewick(self) -> str:
         nodes = list(self.adjList.keys())
         newickNode = max(nodes, key=len)
-        print(f"{newickNode.taxon}:{newickNode.distance}")
         return f"{newickNode.taxon}:{newickNode.distance}"
     
-        

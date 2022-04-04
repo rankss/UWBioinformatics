@@ -45,7 +45,7 @@ class PWA:
     #     self.alignments.append(match)
     #     return
     
-    def _path(temp_path: str, nodes: list, dpArray: np.ndarray, direction: list, col: int, row: int, alignment: Literal=GLOBAL) -> tuple:
+    def _path(temp_path: str, nodes: list[tuple], dpArray: np.ndarray, direction: list[list[str]], col: int, row: int, alignment: Literal=GLOBAL) -> tuple:
         if alignment == PWA.GLOBAL:
             comparison = col > 0 or row > 0
         if alignment == PWA.LOCAL:
@@ -156,7 +156,8 @@ class MSA:
     class MSAData:
         pass
     
-    def clustalw(sequences: list, score: Score):
+    @staticmethod
+    def clustalw(sequences: list[Sequence], score: Score):
         # Produce distance matrix
         distMatrix = np.zeros((len(sequences), len(sequences)))
         for row, vSeq in enumerate(sequences[:-1]):
@@ -166,7 +167,7 @@ class MSA:
                 
         # Produce guide tree
         cluster = Cluster(distMatrix, [sequence.taxa for sequence in sequences])
-        root = cluster.upgma()
+        digraph = cluster.upgma()
         
         # Follow guide tree for alignment
         return

@@ -81,3 +81,15 @@ def test_ClusterUPGMA():
     newick = digraph.toNewick()
     assert newick == "(Moth:17.0,(Tuna:14.5,((Turtle:4.0,Chicken:4.0):4.25,(Dog:6.25,(Human:0.5,Monkey:0.5):5.75):2.0):6.25):2.5):0.0"
     
+def test_ClusterNJ():
+    taxa = ["i", "j", "k", "l"]
+    distances = np.array(
+        [
+            [0, 13, 21, 22],
+            [13, 0, 12, 13],
+            [21, 12, 0, 13],
+            [22, 13, 13, 0]
+        ]
+    )
+    cluster = Cluster(distances, taxa)
+    digraph = cluster.nj()
