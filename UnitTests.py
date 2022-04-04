@@ -93,3 +93,6 @@ def test_ClusterNJ():
     )
     cluster = Cluster(distances, taxa)
     digraph = cluster.nj()
+    newick = digraph.toNewick()
+    assert newick == "((i:11.0,j:2.0):2.0,(k:6.0,l:7.0):2.0):0.0"
+    
