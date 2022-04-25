@@ -6,65 +6,72 @@ from Score import Score
 from Cluster import Cluster
 
 class PWA:
-    """Global/Local Pairwise Alignment
+    """Represents a Global/Local Pairwise Alignment
     """
     @dataclass
     class PWAData:
         score: float
-        paths: list
-        alignments: list
-    
-    GLOBAL = 0
-    LOCAL = 1
+        alignments: list[tuple]
+        
+        def distance(self):
+            minDistance = np.inf
+            for alignment in self.alignments:
+                score = 0.0
+                for top, bot in zip(alignment[0], alignment[1]):
+                    if top == '-' or bot == '-':
+                        score += 0.75
+                    elif top != bot:
+                        score += 1
+                minDistance = min(score, minDistance)
+            
+            return minDistance
+                
+    _GLOBAL = 0
+    _LOCAL = 1
     _DIR_DICT = {
         "L": [-1, 0], # Left
         "U": [0, -1], # Up
         "D": [-1, -1] # Diagonal
     }
-
-    # @staticmethod
-    # def __match(self, temp_path: str): 
-    #     # Charlotte TODO Match has bug for local alignment
-    #     hMatch, vMatch = "", ""
-    #     hCounter, vCounter = 0, 0
-    #     for direction in temp_path:
-    #         if direction == "D":
-    #             hMatch += self.hSeq[hCounter]
-    #             vMatch += self.vSeq[vCounter]
-    #             hCounter += 1
-    #             vCounter += 1
-    #         if direction == "L":
-    #             hMatch += self.hSeq[hCounter]
-    #             vMatch += "-"
-    #             hCounter += 1
-    #         if direction == "U":
-    #             hMatch += "-"
-    #             vMatch += self.vSeq[vCounter]
-    #             vCounter += 1
-    #     match = f"{hMatch}\n{vMatch}"
-    #     self.alignments.append(match)
-    #     return
     
-    def _path(temp_path: str, nodes: list[tuple], dpArray: np.ndarray, direction: list[list[str]], col: int, row: int, alignment: Literal=GLOBAL) -> tuple:
-        if alignment == PWA.GLOBAL:
+    def _path(hSeq: Sequence, vSeq: Sequence, temp_path: str, dpArray: np.ndarray, dirArray: list[list[str]], col: int, row: int, data: PWAData, alignType: Literal=_GLOBAL) -> None:
+        if alignType == PWA._GLOBAL:
             comparison = col > 0 or row > 0
-        if alignment == PWA.LOCAL:
+        if alignType == PWA._LOCAL:
             comparison = dpArray[row, col] != 0
             
+        alignments = []
+            
         if comparison:
-            curr = direction[row][col]
+            curr = dirArray[row][col]
             for direction in curr:
-                PWA._path(temp_path + direction, nodes + [(col, row)],
-                           dpArray, direction,
+                PWA._path(hSeq, vSeq, temp_path + direction,
+                           dpArray, dirArray,
                            col + PWA._DIR_DICT[direction][0],
                            row + PWA._DIR_DICT[direction][1],
-                           alignment)
+                           data, alignType)
+        else:
+            temp_path = temp_path[::-1]
+            hMatch, vMatch = "", ""
+            hCounter, vCounter = 0, 0
+            for direction in temp_path:
+                if direction == "D":
+                    hMatch += hSeq[hCounter]
+                    vMatch += vSeq[vCounter]
+                    hCounter += 1
+                    vCounter += 1
+                if direction == "L":
+                    hMatch += hSeq[hCounter]
+                    vMatch += "-"
+                    hCounter += 1
+                if direction == "U":
+                    hMatch += "-"
+                    vMatch += vSeq[vCounter]
+                    vCounter += 1
+            match = (hMatch, vMatch)
+            data.alignments.append(match)
+        return
         
-        # TODO Charlotte: Insert match code here
-        # 
-        
-        return nodes, PWA._match(temp_path[::-1])
-    
     @staticmethod
     def Global(hSeq: Sequence, vSeq: Sequence, score: Score) -> PWAData:
         hLen, vLen = len(hSeq) + 1, len(vSeq) + 1
@@ -109,9 +116,9 @@ class PWA:
                     direction[row][col] += "D"
 
         optimal = dpArray[vLen-1][hLen-1]
-        PWA._path("", [], hLen-1, vLen-1, PWA.GLOBAL)
-        
-        return
+        data = PWA.PWAData(optimal, [])
+        PWA._path(hSeq, vSeq, "", dpArray, direction, hLen-1, vLen-1, data, PWA._GLOBAL)
+        return data
 
     @staticmethod
     def Local(hSeq: Sequence, vSeq: Sequence, score: Score) -> PWAData:
@@ -145,12 +152,12 @@ class PWA:
         for row in range(vLen):
             for col in range(hLen):
                 if dpArray[row, col] == optimal:
-                    PWA._path("", [], col, row, PWA.LOCAL)
+                    PWA._path("", col, row, PWA._LOCAL)
             
         return
 
 class MSA:
-    """[summary]
+    """Represents a multiple sequence alignment.
     """
     @dataclass
     class MSAData:
@@ -161,10 +168,12 @@ class MSA:
         # Produce distance matrix
         distMatrix = np.zeros((len(sequences), len(sequences)))
         for row, vSeq in enumerate(sequences[:-1]):
-            for col, hSeq in enumerate(sequences[row+1:], row+1):
-                distance = PWA.Global(hSeq, vSeq, score)
+            for col, hSeq in sequences[row+1:]:
+                distance = PWA.Global(hSeq, vSeq, score).distance()
+                distMatrix[row, col] = distance
+                distMatrix[col, row] = distance
+        print(distMatrix)
 
-                
         # Produce guide tree
         cluster = Cluster(distMatrix, [sequence.taxa for sequence in sequences])
         digraph = cluster.upgma()

@@ -44,13 +44,11 @@ def test_NTSequenceTo3AASequences():
 def test_NTSequenceToFR3AASequences():
     pass
 
-# def test_PWAGlobal():
-#     matrix = Score(1, -1, 0, -2)
-#     alignment = PWA(Sequence("GTCGACGCA", "A"), Sequence("GATTACA", "B"), matrix)
-#     alignment.align(PWA.GLOBAL)
-#     assert alignment.optimal == -3
-#     assert len(alignment.alignments) == 2
-#     assert (alignment.dpArray[6] == [-12, -9, -6, -3, -4, -3, 0, -2, -4, -6]).all()
+def test_PWAGlobal():
+    matrix = Score(1, -1, 0, -2)
+    alignment = PWA.Global(Sequence("GTCGACGCA", "A"), Sequence("GATTACA", "B"), matrix)
+    assert alignment.score == -3
+    assert len(alignment.alignments) == 2
 
 def test_ParserFasta():
     filename = "./Testfiles/test.fasta"
@@ -81,6 +79,20 @@ def test_ClusterUPGMA():
     newick = digraph.toNewick()
     assert newick == "(Moth:17.0,(Tuna:14.5,((Turtle:4.0,Chicken:4.0):4.25,(Dog:6.25,(Human:0.5,Monkey:0.5):5.75):2.0):6.25):2.5):0.0"
     
+    taxa = ["A", "B", "C", "D"]
+    distances = np.array(
+        [
+            [0, 6, 4, 9],
+            [6, 0, 6, 5],
+            [4, 6, 0, 9],
+            [9, 5, 9, 0]
+        ]
+    )
+    cluster = Cluster(distances, taxa)
+    digraph = cluster.upgma()
+    newick = digraph.toNewick()
+    print(newick)
+    
 def test_ClusterNJ():
     taxa = ["i", "j", "k", "l"]
     distances = np.array(
@@ -95,4 +107,18 @@ def test_ClusterNJ():
     digraph = cluster.nj()
     newick = digraph.toNewick()
     assert newick == "((i:11.0,j:2.0):2.0,(k:6.0,l:7.0):2.0):0.0"
+    
+    taxa = ["A", "B", "C", "D"]
+    distances = np.array(
+        [
+            [0, 6, 4, 9],
+            [6, 0, 6, 5],
+            [4, 6, 0, 9],
+            [9, 5, 9, 0]
+        ]
+    )
+    cluster = Cluster(distances, taxa)
+    digraph = cluster.nj()
+    newick = digraph.toNewick()
+    print(newick)
     
